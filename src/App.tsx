@@ -16,6 +16,8 @@ import RequestDetailsPage from "@/pages/RequestDetailsPage";
 import UsersSettingsPage from "@/pages/UsersSettingsPage";
 import DepartmentsSettingsPage from "@/pages/DepartmentsSettingsPage";
 import ExternalFormPage from "@/pages/ExternalFormPage";
+import AuditLogPage from "@/pages/AuditLogPage";
+import WorkflowPage from "@/pages/WorkflowPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +38,8 @@ function AuthenticatedApp() {
         <Route path="/request/:id" element={<RequestDetailsPage />} />
         <Route path="/settings/users" element={<UsersSettingsPage />} />
         <Route path="/settings/departments" element={<DepartmentsSettingsPage />} />
+        <Route path="/audit-log" element={<AuditLogPage />} />
+        <Route path="/workflow" element={<WorkflowPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>

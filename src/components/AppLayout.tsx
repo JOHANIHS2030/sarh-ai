@@ -3,8 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { NavLink } from '@/components/NavLink';
 import {
-  LayoutDashboard, FilePlus, FileText, CheckSquare, Settings, LogOut, Globe, Shield,
-  ChevronLeft, ChevronRight, Menu, Users, Building2
+  LayoutDashboard, FilePlus, FileText, CheckSquare, LogOut, Globe, Shield,
+  ChevronLeft, ChevronRight, Menu, Users, Building2, Activity, GitBranch
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -28,18 +28,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { to: '/my-requests', icon: FileText, label: t('myRequests'), show: true },
     { to: '/pending-approvals', icon: CheckSquare, label: t('pendingApprovals'), show: isDeptManager || isSafety || isIdCardTeam || isAdmin },
     { to: '/all-requests', icon: FileText, label: t('allRequests'), show: isAdmin || isIdCardTeam },
+    { to: '/workflow', icon: GitBranch, label: language === 'ar' ? 'سير العمل' : 'Workflow', show: true },
+    { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin },
     { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin },
     { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin },
   ];
 
   return (
     <div className="min-h-screen flex bg-background">
-      {/* Sidebar */}
       <aside
         className={`${sidebarOpen ? 'w-64' : 'w-16'} transition-all duration-300 flex flex-col fixed h-full z-30`}
         style={{ background: 'var(--gradient-hero)' }}
       >
-        {/* Header */}
         <div className="p-4 flex items-center gap-3">
           <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
             <Shield className="w-5 h-5 text-accent-foreground" />
@@ -52,7 +52,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
           )}
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
           {navItems.filter(n => n.show).map(item => (
             <NavLink
@@ -68,7 +67,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
           ))}
         </nav>
 
-        {/* Footer */}
         <div className="p-3 border-t border-sidebar-border space-y-2">
           <button
             onClick={toggleLanguage}
@@ -87,9 +85,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
       </aside>
 
-      {/* Main */}
       <div className={`flex-1 ${sidebarOpen ? 'ms-64' : 'ms-16'} transition-all duration-300`}>
-        {/* Top bar */}
         <header className="h-14 bg-card border-b border-border flex items-center justify-between px-4 sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="text-muted-foreground">

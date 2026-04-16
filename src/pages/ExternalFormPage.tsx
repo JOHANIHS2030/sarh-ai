@@ -34,6 +34,15 @@ const attachmentFields: AttachmentField[] = [
   { key: 'photo', labelAr: 'صورة فوتوغرافية حديثة', labelEn: 'Recent Photo', requiredFor: { direct: { saudi: true, nonSaudi: true }, contractor: { saudi: true, nonSaudi: true } } },
 ];
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function ExternalFormPage() {
   const { addRequest, getNextRequestNumber } = useRequests();
   const [language, setLanguage] = useState<'ar' | 'en'>('ar');
@@ -43,6 +52,7 @@ export default function ExternalFormPage() {
   const [employeeType, setEmployeeType] = useState<EmployeeType>('direct');
   const [isSaudi, setIsSaudi] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     nameEn: '', nameAr: '', nationality: '', employeeId: '', jobTitle: '',
     nationalIdNo: '', dateIssuePlace: '', birthDate: '', bloodType: '', companyNameTel: '', departmentId: '',
@@ -59,16 +69,24 @@ export default function ExternalFormPage() {
     return attachmentFields.filter(a => a.requiredFor[employeeType][nat]);
   }, [employeeType, isSaudi]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.departmentId || !form.nameEn || !form.nameAr || !form.nationalIdNo) return;
 
-    const attachments = Object.entries(files).filter(([, f]) => f).map(([key, file]) => ({
-      id: key, name: file!.name, type: file!.type,
-    }));
+    setSubmitting(true);
+    try {
+      const attachments = await Promise.all(
+        Object.entries(files).filter(([, f]) => f).map(async ([key, file]) => ({
+          id: key, name: file!.name, type: file!.type,
+          data: await fileToBase64(file!),
+        }))
+      );
 
-    addRequest({ ...form, employeeType, attachments, createdBy: 'external' });
-    setSubmitted(true);
+      addRequest({ ...form, employeeType, attachments, createdBy: 'external' });
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) {
@@ -92,7 +110,6 @@ export default function ExternalFormPage() {
       <div className="absolute inset-0"><img src={loginBg} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0 bg-primary/60" /></div>
       
       <div className="relative z-10 max-w-4xl mx-auto py-8 px-4">
-        {/* Language toggle */}
         <button onClick={() => setLanguage(l => l === 'ar' ? 'en' : 'ar')}
           className="absolute top-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-foreground/10 backdrop-blur-sm text-primary-foreground hover:bg-primary-foreground/20 transition-colors"
           style={{ [language === 'ar' ? 'left' : 'right']: '1rem' }}>
@@ -117,7 +134,6 @@ export default function ExternalFormPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Employee Type & Nationality */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label className="text-foreground font-medium mb-2 block">{t('نوع الموظف', 'Employee Type')}</Label>
@@ -185,8 +201,8 @@ export default function ExternalFormPage() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full h-12 gradient-primary text-primary-foreground font-semibold text-base">
-              {t('تقديم الطلب', 'Submit Request')}
+            <Button type="submit" disabled={submitting} className="w-full h-12 gradient-primary text-primary-foreground font-semibold text-base">
+              {submitting ? t('جاري الرفع...', 'Uploading...') : t('تقديم الطلب', 'Submit Request')}
             </Button>
           </form>
         </div>

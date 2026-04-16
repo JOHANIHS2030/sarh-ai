@@ -105,6 +105,9 @@ const translations: Translations = {
   requiredField: { ar: 'هذا الحقل مطلوب', en: 'This field is required' },
   uploadFile: { ar: 'رفع ملف', en: 'Upload File' },
   createdBy: { ar: 'مقدم الطلب', en: 'Created By' },
+  workflow: { ar: 'سير العمل', en: 'Workflow' },
+  auditLog: { ar: 'سجل العمليات', en: 'Audit Log' },
+  deleteRequest: { ar: 'حذف الطلب', en: 'Delete Request' },
 };
 
 interface LanguageContextType {
