@@ -1,13 +1,13 @@
 export type UserRole = 'admin' | 'user';
 
 export type SystemRole = 
-  | 'id_card_executor'      // منفذ بطاقات الهوية
-  | 'security_chief'        // رئيس قسم الأمن
-  | 'safety_orientation'    // مقدم توجيه السلامة
-  | 'ehss_manager'          // مدير قسم البيئة والصحة والسلامة والأمن
-  | 'hr_manager'            // مدير قسم الموارد البشرية والخدمات المشتركة
-  | 'dept_manager'          // مدير قسم
-  | 'requester';            // مقدم طلب
+  | 'id_card_executor'
+  | 'security_chief'
+  | 'safety_orientation'
+  | 'ehss_manager'
+  | 'hr_manager'
+  | 'dept_manager'
+  | 'requester';
 
 export type EmployeeType = 'direct' | 'contractor';
 
@@ -34,6 +34,7 @@ export interface User {
   responsibilityEn: string;
   departmentId?: string;
   canApproveDepartments?: string[];
+  signature?: string; // base64 signature image
 }
 
 export interface Department {
@@ -49,6 +50,7 @@ export interface Attachment {
   type: string;
   file?: File;
   url?: string;
+  data?: string; // base64 data
 }
 
 export interface IDCardRequest {
@@ -83,6 +85,15 @@ export interface ApprovalAction {
   reason?: string;
   timestamp: string;
   stage: RequestStatus;
+}
+
+export interface AuditLogEntry {
+  id: string;
+  userId: string;
+  action: string;
+  details: string;
+  requestId?: string;
+  timestamp: string;
 }
 
 export type Language = 'ar' | 'en';
