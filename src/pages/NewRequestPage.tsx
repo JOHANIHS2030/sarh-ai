@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRequests } from '@/contexts/RequestContext';
@@ -34,6 +34,15 @@ const attachmentFields: AttachmentField[] = [
   { key: 'photo', labelKey: 'att_photo', requiredFor: { direct: { saudi: true, nonSaudi: true }, contractor: { saudi: true, nonSaudi: true } } },
 ];
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function NewRequestPage() {
   const { t, language } = useLanguage();
   const { currentUser } = useAuth();
@@ -43,6 +52,7 @@ export default function NewRequestPage() {
   const requestNumber = useMemo(() => getNextRequestNumber(), []);
   const [employeeType, setEmployeeType] = useState<EmployeeType>('direct');
   const [isSaudi, setIsSaudi] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
     nameEn: '', nameAr: '', nationality: '', employeeId: '', jobTitle: '',
     nationalIdNo: '', dateIssuePlace: '', birthDate: '', bloodType: '', companyNameTel: '', departmentId: '',
@@ -63,36 +73,43 @@ export default function NewRequestPage() {
     setFiles(prev => ({ ...prev, [key]: file }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.departmentId || !form.nameEn || !form.nameAr || !form.nationalIdNo) {
       toast({ title: t('requiredField'), variant: 'destructive' });
       return;
     }
 
-    const attachments = Object.entries(files)
-      .filter(([, f]) => f)
-      .map(([key, file]) => ({
-        id: key,
-        name: file!.name,
-        type: file!.type,
-      }));
+    setSubmitting(true);
+    try {
+      const attachments = await Promise.all(
+        Object.entries(files)
+          .filter(([, f]) => f)
+          .map(async ([key, file]) => ({
+            id: key,
+            name: file!.name,
+            type: file!.type,
+            data: await fileToBase64(file!),
+          }))
+      );
 
-    addRequest({
-      ...form,
-      employeeType,
-      attachments,
-      createdBy: currentUser?.id || '',
-    });
+      addRequest({
+        ...form,
+        employeeType,
+        attachments,
+        createdBy: currentUser?.id || '',
+      });
 
-    toast({ title: t('requestSubmitted') });
-    navigate('/my-requests');
+      toast({ title: t('requestSubmitted') });
+      navigate('/my-requests');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-card rounded-xl shadow-card border border-border/50 overflow-hidden">
-        {/* Header */}
         <div className="gradient-primary px-6 py-5 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-primary-foreground">{t('newRequest')}</h1>
@@ -108,19 +125,14 @@ export default function NewRequestPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Employee Type */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label className="text-foreground font-medium mb-2 block">{t('employeeType')}</Label>
               <div className="flex gap-3">
                 {(['direct', 'contractor'] as EmployeeType[]).map(type => (
-                  <button key={type} type="button"
-                    onClick={() => setEmployeeType(type)}
+                  <button key={type} type="button" onClick={() => setEmployeeType(type)}
                     className={`flex-1 py-3 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
-                      employeeType === type
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border text-muted-foreground hover:border-primary/50'
-                    }`}>
+                      employeeType === type ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/50'}`}>
                     {t(type === 'direct' ? 'directEmployee' : 'contractorEmployee')}
                   </button>
                 ))}
@@ -130,13 +142,9 @@ export default function NewRequestPage() {
               <Label className="text-foreground font-medium mb-2 block">{t('nationality')}</Label>
               <div className="flex gap-3">
                 {[true, false].map(saudi => (
-                  <button key={String(saudi)} type="button"
-                    onClick={() => setIsSaudi(saudi)}
+                  <button key={String(saudi)} type="button" onClick={() => setIsSaudi(saudi)}
                     className={`flex-1 py-3 px-4 rounded-lg border-2 text-sm font-medium transition-all ${
-                      isSaudi === saudi
-                        ? 'border-primary bg-primary/10 text-primary'
-                        : 'border-border text-muted-foreground hover:border-primary/50'
-                    }`}>
+                      isSaudi === saudi ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/50'}`}>
                     {t(saudi ? 'saudi' : 'nonSaudi')}
                   </button>
                 ))}
@@ -144,7 +152,6 @@ export default function NewRequestPage() {
             </div>
           </div>
 
-          {/* Form fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label={`${t('nameAr')} / Name (Arabic)`} value={form.nameAr} onChange={v => setForm(p => ({ ...p, nameAr: v }))} required />
             <FormField label={`${t('nameEn')} / Name (English)`} value={form.nameEn} onChange={v => setForm(p => ({ ...p, nameEn: v }))} required />
@@ -164,7 +171,6 @@ export default function NewRequestPage() {
             <FormField label={`${t('companyNameTel')} / Company Name & Tel.`} value={form.companyNameTel} onChange={v => setForm(p => ({ ...p, companyNameTel: v }))} />
           </div>
 
-          {/* Department */}
           <div>
             <Label className="text-foreground font-medium mb-2 block">{t('department')} / Department</Label>
             <Select value={form.departmentId} onValueChange={v => setForm(p => ({ ...p, departmentId: v }))}>
@@ -177,7 +183,6 @@ export default function NewRequestPage() {
             </Select>
           </div>
 
-          {/* Attachments */}
           <div>
             <h3 className="text-lg font-semibold text-foreground mb-4">{t('attachments')} / Attachments</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -186,8 +191,7 @@ export default function NewRequestPage() {
                   <Label className="text-sm font-medium text-foreground mb-2 block">{t(att.labelKey)}</Label>
                   <div className="flex items-center gap-2">
                     <label className="flex items-center gap-2 cursor-pointer px-3 py-2 rounded-md bg-muted hover:bg-muted/80 transition-colors text-sm text-muted-foreground">
-                      <Upload className="w-4 h-4" />
-                      {t('uploadFile')}
+                      <Upload className="w-4 h-4" />{t('uploadFile')}
                       <input type="file" className="hidden" onChange={e => handleFileChange(att.key, e.target.files?.[0] || null)} />
                     </label>
                     {files[att.key] && (
@@ -201,14 +205,11 @@ export default function NewRequestPage() {
             </div>
           </div>
 
-          {/* Actions */}
           <div className="flex gap-3 pt-4 border-t border-border">
-            <Button type="submit" className="gradient-primary text-primary-foreground font-semibold px-8">
-              {t('submit')}
+            <Button type="submit" disabled={submitting} className="gradient-primary text-primary-foreground font-semibold px-8">
+              {submitting ? (language === 'ar' ? 'جاري الرفع...' : 'Uploading...') : t('submit')}
             </Button>
-            <Button type="button" variant="outline" onClick={() => navigate('/')}>
-              {t('cancel')}
-            </Button>
+            <Button type="button" variant="outline" onClick={() => navigate('/')}>{t('cancel')}</Button>
           </div>
         </form>
       </div>
