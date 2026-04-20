@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import NotificationsBell from '@/components/NotificationsBell';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -106,6 +107,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </Button>
           </div>
           <div className="flex items-center gap-3">
+            <NotificationsBell />
+            <div className="h-8 w-px bg-border" />
             <div className="text-end">
               <p className="text-sm font-medium text-foreground">{language === 'ar' ? currentUser?.nameAr : currentUser?.nameEn}</p>
               <p className="text-xs text-muted-foreground">{language === 'ar' ? currentUser?.jobTitleAr : currentUser?.jobTitleEn}</p>
