@@ -112,6 +112,15 @@ export default function LoginPage() {
             </form>
           </div>
 
+          <a
+            href="/external-form"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center mt-4 text-primary-foreground/90 text-sm font-medium hover:text-primary-foreground underline underline-offset-4"
+          >
+            {language === 'ar' ? '🌐 تقديم طلب من خارج النظام (نموذج خارجي)' : '🌐 Submit a request without login (External form)'}
+          </a>
+
           <p className="text-center text-primary-foreground/60 text-xs mt-6">
             © {new Date().getFullYear()} {t('appSubtitle')} — {t('appTitle')}
           </p>
