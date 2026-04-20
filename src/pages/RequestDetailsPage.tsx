@@ -3,21 +3,24 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRequests } from '@/contexts/RequestContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { initialDepartments } from '@/data/departments';
 import { StatusBadge } from './DashboardPage';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { ArrowRight, ArrowLeft, Printer, CheckCircle, XCircle, PauseCircle, Download, Eye, Trash2 } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Printer, CheckCircle, XCircle, PauseCircle, Download, Eye, Trash2, FileDown } from 'lucide-react';
 import Barcode from 'react-barcode';
 import { RequestStatus } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { generateRequestPDF } from '@/lib/pdfGenerator';
 
 export default function RequestDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { t, language } = useLanguage();
   const { currentUser, getUserById } = useAuth();
   const { getRequestById, updateRequestStatus, deleteRequest } = useRequests();
+  const { settings: company } = useCompany();
   const navigate = useNavigate();
   const printRef = useRef<HTMLDivElement>(null);
   const [reason, setReason] = useState('');
@@ -289,6 +292,13 @@ export default function RequestDetailsPage() {
             <Printer className="w-4 h-4" /> {t('print')}
           </Button>
         )}
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={() => generateRequestPDF({ request, department: dept, creator, company, language, statusLabel: t(request.status) })}
+        >
+          <FileDown className="w-4 h-4" /> {language === 'ar' ? 'تحميل PDF مع المرفقات' : 'Download PDF with Attachments'}
+        </Button>
         {canDelete && (
           <Button variant="outline" className="border-destructive text-destructive hover:bg-destructive/10 gap-2" onClick={handleDelete}>
             <Trash2 className="w-4 h-4" /> {language === 'ar' ? 'حذف الطلب' : 'Delete Request'}
