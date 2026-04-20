@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Globe, Shield, Eye, EyeOff } from 'lucide-react';
-import loginBg from '@/assets/login-bg.jpg';
+import defaultBg from '@/assets/login-bg.jpg';
 
 export default function LoginPage() {
   const { login } = useAuth();
   const { t, toggleLanguage, language } = useLanguage();
+  const { settings } = useCompany();
+  const bg = settings.loginBackground || defaultBg;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +34,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex relative overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
-        <img src={loginBg} alt="" className="w-full h-full object-cover" />
+        <img src={bg} alt="" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-primary/70" />
       </div>
 
@@ -51,11 +54,15 @@ export default function LoginPage() {
           <div className="bg-card rounded-2xl shadow-elevated p-8 backdrop-blur-sm border border-border/50">
             {/* Logo/Header */}
             <div className="text-center mb-8">
-              <div className="w-16 h-16 gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Shield className="w-8 h-8 text-primary-foreground" />
+              <div className="w-16 h-16 gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg overflow-hidden">
+                {settings.logo ? (
+                  <img src={settings.logo} alt="logo" className="w-full h-full object-contain p-1" />
+                ) : (
+                  <Shield className="w-8 h-8 text-primary-foreground" />
+                )}
               </div>
-              <h1 className="text-2xl font-bold text-foreground">{t('appTitle')}</h1>
-              <p className="text-muted-foreground mt-1 text-sm">{t('appSubtitle')}</p>
+              <h1 className="text-2xl font-bold text-foreground">{language === 'ar' ? settings.nameAr : settings.nameEn}</h1>
+              <p className="text-muted-foreground mt-1 text-sm">{t('appTitle')}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -111,6 +118,15 @@ export default function LoginPage() {
               </Button>
             </form>
           </div>
+
+          <a
+            href="/external-form"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-center mt-4 text-primary-foreground/90 text-sm font-medium hover:text-primary-foreground underline underline-offset-4"
+          >
+            {language === 'ar' ? '🌐 تقديم طلب من خارج النظام (نموذج خارجي)' : '🌐 Submit a request without login (External form)'}
+          </a>
 
           <p className="text-center text-primary-foreground/60 text-xs mt-6">
             © {new Date().getFullYear()} {t('appSubtitle')} — {t('appTitle')}

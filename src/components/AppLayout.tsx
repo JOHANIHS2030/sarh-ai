@@ -4,7 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { NavLink } from '@/components/NavLink';
 import {
   LayoutDashboard, FilePlus, FileText, CheckSquare, LogOut, Globe, Shield,
-  ChevronLeft, ChevronRight, Menu, Users, Building2, Activity, GitBranch
+  ChevronLeft, ChevronRight, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -32,7 +32,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin },
     { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin },
     { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin },
+    { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin },
   ];
+
+  const externalUrl = `${window.location.origin}/external-form`;
 
   return (
     <div className="min-h-screen flex bg-background">
@@ -68,6 +71,16 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </nav>
 
         <div className="p-3 border-t border-sidebar-border space-y-2">
+          <a
+            href={externalUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors w-full text-sm"
+            title={externalUrl}
+          >
+            <ExternalLink className="w-5 h-5 flex-shrink-0" />
+            {sidebarOpen && <span className="truncate">{language === 'ar' ? 'النموذج الخارجي' : 'External Form'}</span>}
+          </a>
           <button
             onClick={toggleLanguage}
             className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors w-full text-sm"
