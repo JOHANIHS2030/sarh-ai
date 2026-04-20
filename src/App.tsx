@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { RequestProvider } from "@/contexts/RequestContext";
+import { CompanyProvider } from "@/contexts/CompanyContext";
+import CompanySettingsPage from "@/pages/CompanySettingsPage";
 import LoginPage from "@/pages/LoginPage";
 import AppLayout from "@/components/AppLayout";
 import DashboardPage from "@/pages/DashboardPage";
@@ -40,6 +42,7 @@ function AuthenticatedApp() {
         <Route path="/settings/departments" element={<DepartmentsSettingsPage />} />
         <Route path="/audit-log" element={<AuditLogPage />} />
         <Route path="/workflow" element={<WorkflowPage />} />
+        <Route path="/settings/company" element={<CompanySettingsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
@@ -52,14 +55,16 @@ const App = () => (
       <Toaster />
       <LanguageProvider>
         <AuthProvider>
-          <RequestProvider>
-            <BrowserRouter>
-              <Routes>
-                <Route path="/external-form" element={<ExternalFormPage />} />
-                <Route path="/*" element={<AuthenticatedApp />} />
-              </Routes>
-            </BrowserRouter>
-          </RequestProvider>
+          <CompanyProvider>
+            <RequestProvider>
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/external-form" element={<ExternalFormPage />} />
+                  <Route path="/*" element={<AuthenticatedApp />} />
+                </Routes>
+              </BrowserRouter>
+            </RequestProvider>
+          </CompanyProvider>
         </AuthProvider>
       </LanguageProvider>
     </TooltipProvider>

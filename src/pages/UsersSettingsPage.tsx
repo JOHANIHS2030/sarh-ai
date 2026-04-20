@@ -128,6 +128,26 @@ export default function UsersSettingsPage() {
               </div>
               <div><Label>{language === 'ar' ? 'المسمى الوظيفي (عربي)' : 'Job Title (Arabic)'}</Label><Input value={form.jobTitleAr || ''} onChange={e => setForm(p => ({ ...p, jobTitleAr: e.target.value }))} /></div>
               <div><Label>{language === 'ar' ? 'المسمى الوظيفي (إنجليزي)' : 'Job Title (English)'}</Label><Input value={form.jobTitleEn || ''} onChange={e => setForm(p => ({ ...p, jobTitleEn: e.target.value }))} /></div>
+              <div className="col-span-2">
+                <Label>{language === 'ar' ? 'التوقيع الإلكتروني (صورة)' : 'Electronic Signature (Image)'}</Label>
+                <div className="flex items-center gap-3 mt-1">
+                  {form.signature && (
+                    <img src={form.signature} alt="sig" className="h-14 bg-muted/30 rounded border border-border p-1" />
+                  )}
+                  <label className="inline-flex items-center gap-2 cursor-pointer px-3 py-2 rounded-md bg-muted hover:bg-muted/80 text-sm">
+                    {language === 'ar' ? 'رفع توقيع' : 'Upload Signature'}
+                    <input type="file" accept="image/*" className="hidden" onChange={async e => {
+                      const file = e.target.files?.[0]; if (!file) return;
+                      const r = new FileReader(); r.onload = () => setForm(p => ({ ...p, signature: r.result as string })); r.readAsDataURL(file);
+                    }} />
+                  </label>
+                  {form.signature && (
+                    <button type="button" onClick={() => setForm(p => ({ ...p, signature: undefined }))} className="text-destructive text-xs hover:underline">
+                      {language === 'ar' ? 'حذف' : 'Remove'}
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
             <div className="flex gap-3 justify-end">
               <Button variant="outline" onClick={() => setDialogOpen(false)}>{t('cancel')}</Button>
