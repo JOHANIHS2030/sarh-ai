@@ -295,7 +295,12 @@ export default function RequestDetailsPage() {
         <Button
           variant="outline"
           className="gap-2"
-          onClick={() => generateRequestPDF({ request, department: dept, creator, company, language, statusLabel: t(request.status) })}
+          onClick={() => {
+            const approvers = request.approvalHistory
+              .filter(h => h.action === 'approve')
+              .map(h => ({ stage: h.stage, user: getUserById(h.userId), date: h.timestamp }));
+            generateRequestPDF({ request, department: dept, creator, approvers, company, language, statusLabel: t(request.status) });
+          }}
         >
           <FileDown className="w-4 h-4" /> {language === 'ar' ? 'تحميل PDF مع المرفقات' : 'Download PDF with Attachments'}
         </Button>
