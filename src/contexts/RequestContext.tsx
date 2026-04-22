@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { IDCardRequest, RequestStatus, ApprovalAction, AuditLogEntry } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
+import { readIndexedJSON, readLocalJSON, writeIndexedJSON, writeLocalJSON } from '@/lib/browserStorage';
 
 interface RequestContextType {
   requests: IDCardRequest[];
@@ -14,26 +15,34 @@ interface RequestContextType {
 }
 
 const RequestContext = createContext<RequestContextType | undefined>(undefined);
+const REQUESTS_STORAGE_KEY = 'farabi_requests';
+const AUDIT_LOG_STORAGE_KEY = 'farabi_audit_log';
 
 export function RequestProvider({ children }: { children: React.ReactNode }) {
-  const [requests, setRequests] = useState<IDCardRequest[]>(() => {
-    const saved = localStorage.getItem('farabi_requests');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [requests, setRequests] = useState<IDCardRequest[]>(() => readLocalJSON<IDCardRequest[]>(REQUESTS_STORAGE_KEY, []));
 
-  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(() => {
-    const saved = localStorage.getItem('farabi_audit_log');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(() => readLocalJSON<AuditLogEntry[]>(AUDIT_LOG_STORAGE_KEY, []));
 
-  const saveRequests = (newReqs: IDCardRequest[]) => {
+  useEffect(() => {
+    void readIndexedJSON<IDCardRequest[]>(REQUESTS_STORAGE_KEY, []).then(storedRequests => {
+      setRequests(prev => (prev.length > 0 ? prev : storedRequests));
+    });
+
+    void readIndexedJSON<AuditLogEntry[]>(AUDIT_LOG_STORAGE_KEY, []).then(storedAuditLog => {
+      setAuditLog(prev => (prev.length > 0 ? prev : storedAuditLog));
+    });
+  }, []);
+
+  const saveRequests = async (newReqs: IDCardRequest[]) => {
     setRequests(newReqs);
-    localStorage.setItem('farabi_requests', JSON.stringify(newReqs));
+    writeLocalJSON(REQUESTS_STORAGE_KEY, newReqs);
+    await writeIndexedJSON(REQUESTS_STORAGE_KEY, newReqs);
   };
 
-  const saveAuditLog = (entries: AuditLogEntry[]) => {
+  const saveAuditLog = async (entries: AuditLogEntry[]) => {
     setAuditLog(entries);
-    localStorage.setItem('farabi_audit_log', JSON.stringify(entries));
+    writeLocalJSON(AUDIT_LOG_STORAGE_KEY, entries);
+    await writeIndexedJSON(AUDIT_LOG_STORAGE_KEY, entries);
   };
 
   const addAuditEntry = useCallback((entry: Omit<AuditLogEntry, 'id' | 'timestamp'>) => {
@@ -42,19 +51,16 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
       id: uuidv4(),
       timestamp: new Date().toISOString(),
     };
-    const saved = localStorage.getItem('farabi_audit_log');
-    const current: AuditLogEntry[] = saved ? JSON.parse(saved) : [];
+    const current = auditLog;
     const updated = [newEntry, ...current];
-    saveAuditLog(updated);
-  }, []);
+    void saveAuditLog(updated);
+  }, [auditLog]);
 
   const getNextRequestNumber = useCallback((): string => {
     const year = new Date().getFullYear();
-    const saved = localStorage.getItem('farabi_requests');
-    const existingRequests: IDCardRequest[] = saved ? JSON.parse(saved) : [];
-    const count = existingRequests.filter(r => r.requestNumber.startsWith(`IDC-${year}`)).length + 1;
+    const count = requests.filter(r => r.requestNumber.startsWith(`IDC-${year}`)).length + 1;
     return `IDC-${year}-${String(count).padStart(5, '0')}`;
-  }, []);
+  }, [requests]);
 
   const addRequest = useCallback((data: Omit<IDCardRequest, 'id' | 'requestNumber' | 'status' | 'createdAt' | 'updatedAt' | 'approvalHistory'>): IDCardRequest => {
     const now = new Date().toISOString();
@@ -67,10 +73,8 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
       updatedAt: now,
       approvalHistory: [],
     };
-    const saved = localStorage.getItem('farabi_requests');
-    const current: IDCardRequest[] = saved ? JSON.parse(saved) : [];
-    const newReqs = [...current, newReq];
-    saveRequests(newReqs);
+    const newReqs = [...requests, newReq];
+    void saveRequests(newReqs);
 
     addAuditEntry({
       userId: data.createdBy,
@@ -80,13 +84,11 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
     });
 
     return newReq;
-  }, [getNextRequestNumber, addAuditEntry]);
+  }, [requests, getNextRequestNumber, addAuditEntry]);
 
   const updateRequestStatus = useCallback((requestId: string, status: RequestStatus, userId: string, reason?: string) => {
-    const saved = localStorage.getItem('farabi_requests');
-    const current: IDCardRequest[] = saved ? JSON.parse(saved) : [];
     let requestNumber = '';
-    const newReqs = current.map(r => {
+    const newReqs = requests.map(r => {
       if (r.id === requestId) {
         requestNumber = r.requestNumber;
         const action: ApprovalAction = {
@@ -108,7 +110,7 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
       }
       return r;
     });
-    saveRequests(newReqs);
+    void saveRequests(newReqs);
 
     const actionName = status === 'on_hold' ? 'hold_request' : status === 'rejected' ? 'reject_request' : 'approve_request';
     addAuditEntry({
@@ -117,14 +119,12 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
       details: `${actionName} ${requestNumber}${reason ? ` - ${reason}` : ''}`,
       requestId,
     });
-  }, [addAuditEntry]);
+  }, [requests, addAuditEntry]);
 
   const deleteRequest = useCallback((requestId: string, userId: string) => {
-    const saved = localStorage.getItem('farabi_requests');
-    const current: IDCardRequest[] = saved ? JSON.parse(saved) : [];
-    const req = current.find(r => r.id === requestId);
-    const newReqs = current.filter(r => r.id !== requestId);
-    saveRequests(newReqs);
+    const req = requests.find(r => r.id === requestId);
+    const newReqs = requests.filter(r => r.id !== requestId);
+    void saveRequests(newReqs);
 
     if (req) {
       addAuditEntry({
@@ -134,13 +134,11 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
         requestId,
       });
     }
-  }, [addAuditEntry]);
+  }, [requests, addAuditEntry]);
 
   const getRequestById = useCallback((id: string) => {
-    const saved = localStorage.getItem('farabi_requests');
-    const current: IDCardRequest[] = saved ? JSON.parse(saved) : [];
-    return current.find(r => r.id === id);
-  }, []);
+    return requests.find(r => r.id === id);
+  }, [requests]);
 
   return (
     <RequestContext.Provider value={{ requests, auditLog, addRequest, updateRequestStatus, deleteRequest, getNextRequestNumber, getRequestById, addAuditEntry }}>

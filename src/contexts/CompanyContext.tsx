@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
+import { readLocalJSON, writeLocalJSON } from '@/lib/browserStorage';
 
 export interface CompanySettings {
   nameAr: string;
@@ -28,17 +29,18 @@ interface CompanyContextType {
 }
 
 const CompanyContext = createContext<CompanyContextType | undefined>(undefined);
+const COMPANY_SETTINGS_STORAGE_KEY = 'farabi_company_settings';
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<CompanySettings>(() => {
-    const saved = localStorage.getItem('farabi_company_settings');
-    return saved ? { ...defaultSettings, ...JSON.parse(saved) } : defaultSettings;
-  });
+  const [settings, setSettings] = useState<CompanySettings>(() => ({
+    ...defaultSettings,
+    ...readLocalJSON<Partial<CompanySettings>>(COMPANY_SETTINGS_STORAGE_KEY, {}),
+  }));
 
   const updateSettings = useCallback((s: Partial<CompanySettings>) => {
     setSettings(prev => {
       const next = { ...prev, ...s };
-      localStorage.setItem('farabi_company_settings', JSON.stringify(next));
+      writeLocalJSON(COMPANY_SETTINGS_STORAGE_KEY, next);
       return next;
     });
   }, []);
