@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { useRequests } from '@/contexts/RequestContext';
 import { initialDepartments } from '@/data/departments';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Upload, Check, Shield, Globe } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { EmployeeType } from '@/types';
 import Barcode from 'react-barcode';
-import loginBg from '@/assets/login-bg.jpg';
+import defaultBg from '@/assets/login-bg.jpg';
 
 const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 
@@ -44,9 +45,11 @@ function fileToBase64(file: File): Promise<string> {
 }
 
 export default function ExternalFormPage() {
+  const { settings } = useCompany();
   const { addRequest, getNextRequestNumber } = useRequests();
   const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   const t = (ar: string, en: string) => language === 'ar' ? ar : en;
+  const bg = settings.loginBackground || defaultBg;
 
   const requestNumber = useMemo(() => getNextRequestNumber(), []);
   const [employeeType, setEmployeeType] = useState<EmployeeType>('direct');
@@ -92,7 +95,7 @@ export default function ExternalFormPage() {
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center relative" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-        <div className="absolute inset-0"><img src={loginBg} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0 bg-primary/70" /></div>
+        <div className="absolute inset-0"><img src={bg} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0 bg-primary/70" /></div>
         <div className="bg-card rounded-2xl shadow-elevated p-8 text-center relative z-10 max-w-md mx-4">
           <div className="w-16 h-16 bg-success rounded-full flex items-center justify-center mx-auto mb-4">
             <Check className="w-8 h-8 text-success-foreground" />
@@ -107,7 +110,7 @@ export default function ExternalFormPage() {
 
   return (
     <div className="min-h-screen relative" dir={language === 'ar' ? 'rtl' : 'ltr'}>
-      <div className="absolute inset-0"><img src={loginBg} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0 bg-primary/60" /></div>
+      <div className="absolute inset-0"><img src={bg} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0 bg-primary/60" /></div>
       
       <div className="relative z-10 max-w-4xl mx-auto py-8 px-4">
         <button onClick={() => setLanguage(l => l === 'ar' ? 'en' : 'ar')}
