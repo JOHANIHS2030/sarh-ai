@@ -24,8 +24,13 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>(() => readLocalJSON<AuditLogEntry[]>(AUDIT_LOG_STORAGE_KEY, []));
 
   useEffect(() => {
-    void readIndexedJSON<IDCardRequest[]>(REQUESTS_STORAGE_KEY, []).then(setRequests);
-    void readIndexedJSON<AuditLogEntry[]>(AUDIT_LOG_STORAGE_KEY, []).then(setAuditLog);
+    void readIndexedJSON<IDCardRequest[]>(REQUESTS_STORAGE_KEY, []).then(storedRequests => {
+      setRequests(prev => (prev.length > 0 ? prev : storedRequests));
+    });
+
+    void readIndexedJSON<AuditLogEntry[]>(AUDIT_LOG_STORAGE_KEY, []).then(storedAuditLog => {
+      setAuditLog(prev => (prev.length > 0 ? prev : storedAuditLog));
+    });
   }, []);
 
   const saveRequests = async (newReqs: IDCardRequest[]) => {
