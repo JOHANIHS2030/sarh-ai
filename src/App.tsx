@@ -20,6 +20,7 @@ import DepartmentsSettingsPage from "@/pages/DepartmentsSettingsPage";
 import ExternalFormPage from "@/pages/ExternalFormPage";
 import AuditLogPage from "@/pages/AuditLogPage";
 import WorkflowPage from "@/pages/WorkflowPage";
+import FormBuilderPage from "@/pages/FormBuilderPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ function AuthenticatedApp() {
         <Route path="/audit-log" element={<AuditLogPage />} />
         <Route path="/workflow" element={<WorkflowPage />} />
         <Route path="/settings/company" element={<CompanySettingsPage />} />
+        <Route path="/builder" element={<FormBuilderPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
