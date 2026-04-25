@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
-import { IDCardRequest, RequestStatus, ApprovalAction, AuditLogEntry } from '@/types';
+import { IDCardRequest, RequestStatus, ApprovalAction, AuditLogEntry, IssuanceDetails } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 import { readIndexedJSON, readLocalJSON, writeIndexedJSON, writeLocalJSON } from '@/lib/browserStorage';
 
@@ -8,6 +8,7 @@ interface RequestContextType {
   auditLog: AuditLogEntry[];
   addRequest: (request: Omit<IDCardRequest, 'id' | 'requestNumber' | 'status' | 'createdAt' | 'updatedAt' | 'approvalHistory'>) => IDCardRequest;
   updateRequestStatus: (requestId: string, status: RequestStatus, userId: string, reason?: string) => void;
+  setIssuance: (requestId: string, issuance: IssuanceDetails) => void;
   deleteRequest: (requestId: string, userId: string) => void;
   getNextRequestNumber: () => string;
   getRequestById: (id: string) => IDCardRequest | undefined;
@@ -117,6 +118,24 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
       userId,
       action: actionName,
       details: `${actionName} ${requestNumber}${reason ? ` - ${reason}` : ''}`,
+      requestId,
+    });
+  }, [requests, addAuditEntry]);
+
+  const setIssuance = useCallback((requestId: string, issuance: IssuanceDetails) => {
+    let requestNumber = '';
+    const newReqs = requests.map(r => {
+      if (r.id === requestId) {
+        requestNumber = r.requestNumber;
+        return { ...r, issuance, updatedAt: new Date().toISOString() };
+      }
+      return r;
+    });
+    void saveRequests(newReqs);
+    addAuditEntry({
+      userId: issuance.issuedById,
+      action: 'issuance_recorded',
+      details: `Recorded issuance for ${requestNumber} — Card ${issuance.cardNumber}`,
       requestId,
     });
   }, [requests, addAuditEntry]);
