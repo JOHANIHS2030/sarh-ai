@@ -9,23 +9,39 @@ import { StatusBadge } from './DashboardPage';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { ArrowRight, ArrowLeft, Printer, CheckCircle, XCircle, PauseCircle, Download, Eye, Trash2, FileDown } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Printer, CheckCircle, XCircle, PauseCircle, Download, Eye, Trash2, FileDown, IdCard, Save } from 'lucide-react';
 import Barcode from 'react-barcode';
-import { RequestStatus } from '@/types';
+import { RequestStatus, IssuanceDetails } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { generateRequestPDF } from '@/lib/pdfGenerator';
 
 export default function RequestDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { t, language } = useLanguage();
   const { currentUser, getUserById } = useAuth();
-  const { getRequestById, updateRequestStatus, deleteRequest } = useRequests();
+  const { getRequestById, updateRequestStatus, deleteRequest, setIssuance } = useRequests();
   const { settings: company } = useCompany();
   const navigate = useNavigate();
   const printRef = useRef<HTMLDivElement>(null);
   const [reason, setReason] = useState('');
   const [showReasonInput, setShowReasonInput] = useState<'hold' | 'reject' | null>(null);
   const [previewAttachment, setPreviewAttachment] = useState<{ name: string; data: string; type: string } | null>(null);
+  const [showIssuance, setShowIssuance] = useState(false);
+  const [issuanceForm, setIssuanceForm] = useState<IssuanceDetails>({
+    cardNumber: '',
+    serial: '',
+    issueDate: new Date().toISOString().slice(0, 10),
+    expiryDate: '',
+    fingerprintTaken: false,
+    instructionsGiven: false,
+    dataEntered: false,
+    issuedById: '',
+    issuedByName: '',
+    issuedAt: '',
+  });
 
   const request = getRequestById(id || '');
   const departments = useMemo(() => {
@@ -269,6 +285,24 @@ export default function RequestDetailsPage() {
               </div>
             </div>
           )}
+
+          {request.issuance && (
+            <div className="mt-6 p-4 rounded-lg border-2 border-success/40 bg-success/5">
+              <h3 className="font-bold text-success mb-3 flex items-center gap-2">
+                <IdCard className="w-5 h-5" /> {language === 'ar' ? 'بيانات الإصدار النهائي' : 'Final Issuance Details'}
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <Field label={language === 'ar' ? 'رقم البطاقة' : 'Card No.'} value={request.issuance.cardNumber} />
+                <Field label={language === 'ar' ? 'التسلسل' : 'Serial'} value={request.issuance.serial} />
+                <Field label={language === 'ar' ? 'تاريخ الإصدار' : 'Issue Date'} value={request.issuance.issueDate} />
+                <Field label={language === 'ar' ? 'تاريخ الانتهاء' : 'Expiry Date'} value={request.issuance.expiryDate} />
+                <Field label={language === 'ar' ? 'البصمة' : 'Fingerprint'} value={request.issuance.fingerprintTaken ? (language === 'ar' ? 'نعم' : 'Yes') : (language === 'ar' ? 'لا' : 'No')} />
+                <Field label={language === 'ar' ? 'الإرشادات' : 'Instructions'} value={request.issuance.instructionsGiven ? (language === 'ar' ? 'نعم' : 'Yes') : (language === 'ar' ? 'لا' : 'No')} />
+                <Field label={language === 'ar' ? 'إدخال البيانات' : 'Data Entered'} value={request.issuance.dataEntered ? (language === 'ar' ? 'نعم' : 'Yes') : (language === 'ar' ? 'لا' : 'No')} />
+                <Field label={language === 'ar' ? 'بواسطة' : 'Issued By'} value={request.issuance.issuedByName} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -286,6 +320,18 @@ export default function RequestDetailsPage() {
               <XCircle className="w-4 h-4" /> {t('reject')}
             </Button>
           </>
+        )}
+        {request.status === 'approved' && (currentUser?.systemRole === 'id_card_executor' || currentUser?.role === 'admin') && (
+          <Button
+            onClick={() => {
+              if (request.issuance) setIssuanceForm(request.issuance);
+              else setIssuanceForm(prev => ({ ...prev, issuedById: currentUser!.id, issuedByName: language === 'ar' ? currentUser!.nameAr : currentUser!.nameEn }));
+              setShowIssuance(true);
+            }}
+            className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+          >
+            <IdCard className="w-4 h-4" /> {request.issuance ? (language === 'ar' ? 'تعديل بيانات البطاقة' : 'Edit Card Data') : (language === 'ar' ? 'تسجيل بيانات البطاقة' : 'Record Card Data')}
+          </Button>
         )}
         {request.status === 'approved' && (
           <Button onClick={handlePrint} className="gradient-primary text-primary-foreground gap-2">
@@ -347,6 +393,73 @@ export default function RequestDetailsPage() {
                 </Button>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Issuance dialog */}
+      <Dialog open={showIssuance} onOpenChange={setShowIssuance}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><IdCard className="w-5 h-5 text-primary" /> {language === 'ar' ? 'بيانات إصدار البطاقة' : 'Card Issuance Details'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <div>
+              <Label>{language === 'ar' ? 'رقم البطاقة' : 'Card Number'} *</Label>
+              <Input value={issuanceForm.cardNumber} onChange={e => setIssuanceForm({ ...issuanceForm, cardNumber: e.target.value })} />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'التسلسل' : 'Serial'} *</Label>
+              <Input value={issuanceForm.serial} onChange={e => setIssuanceForm({ ...issuanceForm, serial: e.target.value })} />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'تاريخ الإصدار' : 'Issue Date'} *</Label>
+              <Input type="date" value={issuanceForm.issueDate} onChange={e => setIssuanceForm({ ...issuanceForm, issueDate: e.target.value })} />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'تاريخ الانتهاء' : 'Expiry Date'} *</Label>
+              <Input type="date" value={issuanceForm.expiryDate} onChange={e => setIssuanceForm({ ...issuanceForm, expiryDate: e.target.value })} />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'بواسطة' : 'Issued By'}</Label>
+              <Input value={issuanceForm.issuedByName} onChange={e => setIssuanceForm({ ...issuanceForm, issuedByName: e.target.value })} />
+            </div>
+            <div className="md:col-span-2 space-y-2 bg-muted/30 p-3 rounded-lg">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={issuanceForm.fingerprintTaken} onCheckedChange={c => setIssuanceForm({ ...issuanceForm, fingerprintTaken: !!c })} />
+                <span className="text-sm">{language === 'ar' ? 'أخذت له بصمة' : 'Fingerprint taken'}</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={issuanceForm.instructionsGiven} onCheckedChange={c => setIssuanceForm({ ...issuanceForm, instructionsGiven: !!c })} />
+                <span className="text-sm">{language === 'ar' ? 'أعطي الإرشادات والتعليمات' : 'Instructions given'}</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={issuanceForm.dataEntered} onCheckedChange={c => setIssuanceForm({ ...issuanceForm, dataEntered: !!c })} />
+                <span className="text-sm">{language === 'ar' ? 'إدخال البيانات في الحاسب الآلي' : 'Data entered in system'}</span>
+              </label>
+            </div>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <Button
+              onClick={() => {
+                if (!issuanceForm.cardNumber || !issuanceForm.serial || !issuanceForm.expiryDate) {
+                  toast({ title: language === 'ar' ? 'يرجى تعبئة الحقول المطلوبة' : 'Please fill required fields', variant: 'destructive' });
+                  return;
+                }
+                setIssuance(request.id, {
+                  ...issuanceForm,
+                  issuedById: currentUser!.id,
+                  issuedByName: issuanceForm.issuedByName || (language === 'ar' ? currentUser!.nameAr : currentUser!.nameEn),
+                  issuedAt: new Date().toISOString(),
+                });
+                toast({ title: language === 'ar' ? 'تم حفظ بيانات الإصدار' : 'Issuance saved' });
+                setShowIssuance(false);
+              }}
+              className="bg-success text-success-foreground gap-2"
+            >
+              <Save className="w-4 h-4" /> {language === 'ar' ? 'حفظ' : 'Save'}
+            </Button>
+            <Button variant="outline" onClick={() => setShowIssuance(false)}>{language === 'ar' ? 'إلغاء' : 'Cancel'}</Button>
           </div>
         </DialogContent>
       </Dialog>

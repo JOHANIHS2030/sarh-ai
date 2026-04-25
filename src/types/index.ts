@@ -76,6 +76,20 @@ export interface IDCardRequest {
   approvalHistory: ApprovalAction[];
   holdReason?: string;
   rejectReason?: string;
+  issuance?: IssuanceDetails;
+}
+
+export interface IssuanceDetails {
+  cardNumber: string;
+  serial: string;
+  issueDate: string;
+  expiryDate: string;
+  fingerprintTaken: boolean;
+  instructionsGiven: boolean;
+  dataEntered: boolean;
+  issuedById: string;
+  issuedByName: string;
+  issuedAt: string;
 }
 
 export interface ApprovalAction {
