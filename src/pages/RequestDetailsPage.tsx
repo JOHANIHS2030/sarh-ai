@@ -285,6 +285,24 @@ export default function RequestDetailsPage() {
               </div>
             </div>
           )}
+
+          {request.issuance && (
+            <div className="mt-6 p-4 rounded-lg border-2 border-success/40 bg-success/5">
+              <h3 className="font-bold text-success mb-3 flex items-center gap-2">
+                <IdCard className="w-5 h-5" /> {language === 'ar' ? 'بيانات الإصدار النهائي' : 'Final Issuance Details'}
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                <Field label={language === 'ar' ? 'رقم البطاقة' : 'Card No.'} value={request.issuance.cardNumber} />
+                <Field label={language === 'ar' ? 'التسلسل' : 'Serial'} value={request.issuance.serial} />
+                <Field label={language === 'ar' ? 'تاريخ الإصدار' : 'Issue Date'} value={request.issuance.issueDate} />
+                <Field label={language === 'ar' ? 'تاريخ الانتهاء' : 'Expiry Date'} value={request.issuance.expiryDate} />
+                <Field label={language === 'ar' ? 'البصمة' : 'Fingerprint'} value={request.issuance.fingerprintTaken ? (language === 'ar' ? 'نعم' : 'Yes') : (language === 'ar' ? 'لا' : 'No')} />
+                <Field label={language === 'ar' ? 'الإرشادات' : 'Instructions'} value={request.issuance.instructionsGiven ? (language === 'ar' ? 'نعم' : 'Yes') : (language === 'ar' ? 'لا' : 'No')} />
+                <Field label={language === 'ar' ? 'إدخال البيانات' : 'Data Entered'} value={request.issuance.dataEntered ? (language === 'ar' ? 'نعم' : 'Yes') : (language === 'ar' ? 'لا' : 'No')} />
+                <Field label={language === 'ar' ? 'بواسطة' : 'Issued By'} value={request.issuance.issuedByName} />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
