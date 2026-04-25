@@ -1,22 +1,45 @@
+import { useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useRequests } from '@/contexts/RequestContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, CheckCircle, XCircle, Clock, PauseCircle } from 'lucide-react';
+import { IDCardRequest } from '@/types';
 
 export default function DashboardPage() {
   const { t, language } = useLanguage();
   const { requests } = useRequests();
   const { currentUser } = useAuth();
 
+  // Confidentiality: same rule as AllRequestsPage / RequestDetailsPage.
+  // Approved requests are visible only to ID-card team & admin.
+  const visibleRequests = useMemo<IDCardRequest[]>(() => {
+    if (!currentUser) return [];
+    const sr = currentUser.systemRole;
+    const isAdmin = currentUser.role === 'admin';
+    const isIdCardTeam = sr === 'id_card_executor' || sr === 'security_chief';
+    const isSafety = sr === 'safety_orientation' || sr === 'ehss_manager';
+    const isDeptApprover = sr === 'dept_manager' || sr === 'hr_manager';
+    const depts = currentUser.canApproveDepartments ?? [];
+
+    return requests.filter(r => {
+      if (r.createdBy === currentUser.id) return true;
+      if (isAdmin || isIdCardTeam) return true;
+      if (r.status === 'approved') return false;
+      if (isSafety && r.status === 'pending_safety_approval') return true;
+      if (isDeptApprover && r.status === 'pending_dept_approval' && depts.includes(r.departmentId)) return true;
+      return false;
+    });
+  }, [requests, currentUser]);
+
   const stats = [
-    { label: t('totalRequests'), value: requests.length, icon: FileText, color: 'bg-primary text-primary-foreground' },
-    { label: t('pendingRequests'), value: requests.filter(r => r.status.startsWith('pending')).length, icon: Clock, color: 'bg-warning text-warning-foreground' },
-    { label: t('approvedRequests'), value: requests.filter(r => r.status === 'approved').length, icon: CheckCircle, color: 'bg-success text-success-foreground' },
-    { label: t('holdRequests'), value: requests.filter(r => r.status === 'on_hold').length, icon: PauseCircle, color: 'bg-info text-info-foreground' },
-    { label: t('rejectedRequests'), value: requests.filter(r => r.status === 'rejected').length, icon: XCircle, color: 'bg-destructive text-destructive-foreground' },
+    { label: t('totalRequests'), value: visibleRequests.length, icon: FileText, color: 'bg-primary text-primary-foreground' },
+    { label: t('pendingRequests'), value: visibleRequests.filter(r => r.status.startsWith('pending')).length, icon: Clock, color: 'bg-warning text-warning-foreground' },
+    { label: t('approvedRequests'), value: visibleRequests.filter(r => r.status === 'approved').length, icon: CheckCircle, color: 'bg-success text-success-foreground' },
+    { label: t('holdRequests'), value: visibleRequests.filter(r => r.status === 'on_hold').length, icon: PauseCircle, color: 'bg-info text-info-foreground' },
+    { label: t('rejectedRequests'), value: visibleRequests.filter(r => r.status === 'rejected').length, icon: XCircle, color: 'bg-destructive text-destructive-foreground' },
   ];
 
-  const recentRequests = [...requests].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
+  const recentRequests = [...visibleRequests].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
 
   return (
     <div className="space-y-6">
