@@ -1,29 +1,95 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRequests } from '@/contexts/RequestContext';
 import { StatusBadge } from './DashboardPage';
 import { useNavigate } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search } from 'lucide-react';
+import { Search, ShieldAlert } from 'lucide-react';
+import { IDCardRequest } from '@/types';
 
 export default function AllRequestsPage() {
   const { t, language } = useLanguage();
+  const { currentUser } = useAuth();
   const { requests } = useRequests();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const filtered = requests
-    .filter(r => {
-      if (statusFilter !== 'all' && r.status !== statusFilter) return false;
-      if (search) {
-        const s = search.toLowerCase();
-        return r.requestNumber.toLowerCase().includes(s) || r.nameAr.includes(s) || r.nameEn.toLowerCase().includes(s) || r.nationalIdNo.includes(s);
-      }
-      return true;
-    })
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // Derived role flags
+  const isAdmin = currentUser?.role === 'admin';
+  const isIdCardTeam =
+    currentUser?.systemRole === 'id_card_executor' ||
+    currentUser?.systemRole === 'security_chief';
+  const isSafety =
+    currentUser?.systemRole === 'safety_orientation' ||
+    currentUser?.systemRole === 'ehss_manager';
+  const isDeptApprover =
+    currentUser?.systemRole === 'dept_manager' ||
+    currentUser?.systemRole === 'hr_manager';
+
+  // Page-level guard: only admin or ID-card team can open this page at all.
+  const canViewPage = isAdmin || isIdCardTeam;
+
+  // Per-record visibility: a user may see a request only if at least one is true:
+  //  - they created it
+  //  - they are part of the ID card / security team or admin (full visibility)
+  //  - they are a current-stage approver (dept manager / safety) AND it is NOT yet approved
+  // Approved requests are confidential and only visible to ID-card team & admin.
+  const canSeeRequest = (r: IDCardRequest): boolean => {
+    if (!currentUser) return false;
+    if (r.createdBy === currentUser.id) return true;
+    if (isAdmin || isIdCardTeam) return true;
+
+    // Approved / final-stage requests are confidential to non ID-card staff.
+    if (r.status === 'approved') return false;
+
+    if (isSafety && r.status === 'pending_safety_approval') return true;
+
+    if (isDeptApprover && r.status === 'pending_dept_approval') {
+      const depts = currentUser.canApproveDepartments ?? [];
+      if (depts.includes(r.departmentId)) return true;
+    }
+
+    return false;
+  };
+
+  const filtered = useMemo(() => {
+    return requests
+      .filter(canSeeRequest)
+      .filter(r => {
+        if (statusFilter !== 'all' && r.status !== statusFilter) return false;
+        if (search) {
+          const s = search.toLowerCase();
+          return (
+            r.requestNumber.toLowerCase().includes(s) ||
+            r.nameAr.includes(s) ||
+            r.nameEn.toLowerCase().includes(s) ||
+            r.nationalIdNo.includes(s)
+          );
+        }
+        return true;
+      })
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requests, currentUser, search, statusFilter]);
+
+  if (!canViewPage) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <ShieldAlert className="w-12 h-12 text-destructive" />
+        <h1 className="text-2xl font-bold text-foreground">
+          {language === 'ar' ? 'غير مصرح' : 'Not authorized'}
+        </h1>
+        <p className="text-muted-foreground max-w-md">
+          {language === 'ar'
+            ? 'هذه الصفحة مخصصة لقسم بطاقات الهوية ومسؤول النظام فقط. الطلبات الموافق عليها سرية ولا تُعرض لباقي المستخدمين.'
+            : 'This page is restricted to the ID Card team and system admin. Approved requests are confidential.'}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
