@@ -53,6 +53,40 @@ export default function RequestDetailsPage() {
     return <div className="text-center py-12 text-muted-foreground">{t('noRequests')}</div>;
   }
 
+  // Confidentiality guard — only allow viewing if the user is involved.
+  // Approved requests are confidential to the ID-card team & admin.
+  const canViewRequest = (() => {
+    if (!currentUser) return false;
+    if (currentUser.role === 'admin') return true;
+    if (request.createdBy === currentUser.id) return true;
+    const sr = currentUser.systemRole;
+    const isIdCardTeam = sr === 'id_card_executor' || sr === 'security_chief';
+    if (isIdCardTeam) return true;
+    if (request.status === 'approved') return false;
+    if ((sr === 'safety_orientation' || sr === 'ehss_manager') && request.status === 'pending_safety_approval') return true;
+    if ((sr === 'dept_manager' || sr === 'hr_manager') && request.status === 'pending_dept_approval') {
+      const depts = currentUser.canApproveDepartments ?? [];
+      if (depts.includes(request.departmentId)) return true;
+    }
+    return false;
+  })();
+
+  if (!canViewRequest) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+        <h1 className="text-2xl font-bold text-foreground">
+          {language === 'ar' ? 'غير مصرح بعرض هذا الطلب' : 'Not authorized to view this request'}
+        </h1>
+        <p className="text-muted-foreground max-w-md">
+          {language === 'ar'
+            ? 'هذا الطلب سري ولا يمكن عرضه إلا للأشخاص المعنيين بمعالجته.'
+            : 'This request is confidential and only visible to the staff handling it.'}
+        </p>
+        <Button onClick={() => navigate('/')}>{language === 'ar' ? 'العودة' : 'Go back'}</Button>
+      </div>
+    );
+  }
+
   const dept = departments.find((d: any) => d.id === request.departmentId);
   const creator = getUserById(request.createdBy);
 
