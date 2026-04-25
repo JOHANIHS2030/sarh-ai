@@ -160,7 +160,7 @@ export function RequestProvider({ children }: { children: React.ReactNode }) {
   }, [requests]);
 
   return (
-    <RequestContext.Provider value={{ requests, auditLog, addRequest, updateRequestStatus, deleteRequest, getNextRequestNumber, getRequestById, addAuditEntry }}>
+    <RequestContext.Provider value={{ requests, auditLog, addRequest, updateRequestStatus, setIssuance, deleteRequest, getNextRequestNumber, getRequestById, addAuditEntry }}>
       {children}
     </RequestContext.Provider>
   );
