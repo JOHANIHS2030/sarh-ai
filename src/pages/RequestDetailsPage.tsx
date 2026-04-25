@@ -112,6 +112,15 @@ export default function RequestDetailsPage() {
     const w = window.open('', '_blank');
     if (!w) return;
 
+    // HTML-escape helper to prevent XSS via user-controlled fields
+    const esc = (s: unknown): string =>
+      String(s ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+
     const fieldRows = [
       [language === 'ar' ? 'نوع الموظف' : 'Employee Type', t(request.employeeType === 'direct' ? 'directEmployee' : 'contractorEmployee')],
       [language === 'ar' ? 'القسم' : 'Department', language === 'ar' ? dept?.nameAr : dept?.nameEn],
@@ -128,7 +137,7 @@ export default function RequestDetailsPage() {
     ];
 
     const dir = language === 'ar' ? 'rtl' : 'ltr';
-    w.document.write(`<html dir="${dir}"><head><title>${request.requestNumber}</title>
+    w.document.write(`<html dir="${dir}"><head><title>${esc(request.requestNumber)}</title>
     <style>
       @page { size: A4; margin: 15mm; }
       * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -154,20 +163,20 @@ export default function RequestDetailsPage() {
       </div>
       <div class="ref">
         <p>${language === 'ar' ? 'رقم الطلب' : 'Request No.'}</p>
-        <strong>${request.requestNumber}</strong>
-        <p style="margin-top:3px;font-size:9px">${language === 'ar' ? 'التاريخ' : 'Date'}: ${new Date(request.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}</p>
+        <strong>${esc(request.requestNumber)}</strong>
+        <p style="margin-top:3px;font-size:9px">${language === 'ar' ? 'التاريخ' : 'Date'}: ${esc(new Date(request.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US'))}</p>
       </div>
     </div>
-    <table>${fieldRows.map(([l, v]) => `<tr><th>${l}</th><td>${v || '—'}</td></tr>`).join('')}</table>
+    <table>${fieldRows.map(([l, v]) => `<tr><th>${esc(l)}</th><td>${v ? esc(v) : '—'}</td></tr>`).join('')}</table>
     <p class="section-title">${language === 'ar' ? 'المرفقات المقدمة' : 'Submitted Attachments'}</p>
-    <table><tr>${request.attachments.map(a => `<td style="text-align:center;font-size:10px">✓ ${a.name}</td>`).join('')}</tr></table>
+    <table><tr>${request.attachments.map(a => `<td style="text-align:center;font-size:10px">✓ ${esc(a.name)}</td>`).join('')}</tr></table>
     <p class="section-title">${language === 'ar' ? 'التواقيع' : 'Signatures'}</p>
     <div class="signatures">
       <div class="sig-box"><div class="sig-line">${language === 'ar' ? 'مدير القسم' : 'Dept. Manager'}</div></div>
       <div class="sig-box"><div class="sig-line">${language === 'ar' ? 'فريق السلامة' : 'Safety Team'}</div></div>
       <div class="sig-box"><div class="sig-line">${language === 'ar' ? 'قسم بطاقات الهوية' : 'ID Card Section'}</div></div>
     </div>
-    <div style="text-align:center;margin-top:10px"><span class="status-badge">${t(request.status)}</span></div>
+    <div style="text-align:center;margin-top:10px"><span class="status-badge">${esc(t(request.status))}</span></div>
     </body></html>`);
     w.document.close();
     w.print();
