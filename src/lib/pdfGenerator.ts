@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import JsBarcode from 'jsbarcode';
 import { IDCardRequest, Department, User } from '@/types';
 import { CompanySettings } from '@/contexts/CompanyContext';
@@ -13,23 +14,6 @@ interface GenerateArgs {
   statusLabel: string;
 }
 
-// Brand colors
-const BRAND = { r: 26, g: 54, b: 93 };
-const GOLD = { r: 184, g: 134, b: 11 };
-const LIGHT = { r: 240, g: 244, b: 248 };
-
-// Load image and get dimensions
-function loadImage(src: string): Promise<{ data: string; w: number; h: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve({ data: src, w: img.width, h: img.height });
-    img.onerror = reject;
-    img.src = src;
-  });
-}
-
-// Generate barcode as data URL
 function generateBarcodeDataURL(value: string): string {
   const canvas = document.createElement('canvas');
   try {
@@ -48,83 +32,69 @@ function generateBarcodeDataURL(value: string): string {
   }
 }
 
-// Reusable header drawer
-function drawHeader(
-  pdf: jsPDF,
-  pageW: number,
-  margin: number,
-  company: CompanySettings,
-  request: IDCardRequest,
-  isAr: boolean,
-  barcodeUrl: string
-): number {
-  let y = margin;
+// Render an HTML node into a hidden container and convert to PDF pages.
+// Uses html2canvas which fully supports Arabic, custom fonts, and images.
+async function renderHtmlToPdf(html: string, fileName: string) {
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '-10000px';
+  container.style.top = '0';
+  container.style.width = '794px'; // A4 width @ 96dpi
+  container.style.background = '#ffffff';
+  container.innerHTML = html;
+  document.body.appendChild(container);
 
-  // Top brand bar
-  pdf.setFillColor(BRAND.r, BRAND.g, BRAND.b);
-  pdf.rect(0, 0, pageW, 4, 'F');
-  pdf.setFillColor(GOLD.r, GOLD.g, GOLD.b);
-  pdf.rect(0, 4, pageW, 1, 'F');
+  // Wait for images to load
+  const imgs = Array.from(container.querySelectorAll('img'));
+  await Promise.all(
+    imgs.map(
+      img =>
+        new Promise<void>(resolve => {
+          if (img.complete) return resolve();
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        })
+    )
+  );
 
-  y += 4;
+  const pages = Array.from(container.querySelectorAll<HTMLElement>('.pdf-page'));
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageW = 210;
+  const pageH = 297;
 
-  // Logo on left
-  if (company.logo) {
-    try {
-      pdf.addImage(company.logo, 'PNG', margin, y, 22, 22);
-    } catch {}
+  for (let i = 0; i < pages.length; i++) {
+    const canvas = await html2canvas(pages[i], {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+    });
+    const img = canvas.toDataURL('image/jpeg', 0.92);
+    if (i > 0) pdf.addPage();
+    // Fit canvas into A4 keeping aspect ratio
+    const imgW = pageW;
+    const imgH = (canvas.height * imgW) / canvas.width;
+    if (imgH <= pageH) {
+      pdf.addImage(img, 'JPEG', 0, 0, imgW, imgH);
+    } else {
+      // Scale to fit height
+      const h = pageH;
+      const w = (canvas.width * h) / canvas.height;
+      pdf.addImage(img, 'JPEG', (pageW - w) / 2, 0, w, h);
+    }
   }
 
-  // Company center
-  pdf.setFontSize(13);
-  pdf.setTextColor(BRAND.r, BRAND.g, BRAND.b);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text(company.nameEn, pageW / 2, y + 7, { align: 'center' });
-  pdf.setFontSize(9);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setTextColor(90);
-  pdf.text(company.addressEn, pageW / 2, y + 12, { align: 'center' });
-  pdf.setFontSize(8);
-  pdf.text(`${company.phone}  |  ${company.email}  |  ${company.website}`, pageW / 2, y + 16.5, { align: 'center' });
-
-  // Right corner: request number + barcode
-  if (barcodeUrl) {
-    try {
-      pdf.addImage(barcodeUrl, 'PNG', pageW - margin - 45, y + 1, 45, 14);
-    } catch {}
-  }
-  pdf.setFontSize(8);
-  pdf.setTextColor(80);
-  pdf.text('Request No.', pageW - margin, y + 19, { align: 'right' });
-  pdf.setFont('courier', 'bold');
-  pdf.setFontSize(10);
-  pdf.setTextColor(BRAND.r, BRAND.g, BRAND.b);
-  pdf.text(request.requestNumber, pageW - margin, y + 23, { align: 'right' });
-
-  y += 26;
-
-  pdf.setDrawColor(BRAND.r, BRAND.g, BRAND.b);
-  pdf.setLineWidth(0.5);
-  pdf.line(margin, y, pageW - margin, y);
-  pdf.setDrawColor(GOLD.r, GOLD.g, GOLD.b);
-  pdf.setLineWidth(0.2);
-  pdf.line(margin, y + 0.8, pageW - margin, y + 0.8);
-
-  return y + 5;
+  document.body.removeChild(container);
+  pdf.save(fileName);
 }
 
-// Footer
-function drawFooter(pdf: jsPDF, pageW: number, pageH: number, margin: number, company: CompanySettings, pageNum: number, totalPages: number) {
-  const fy = pageH - 10;
-  pdf.setDrawColor(200);
-  pdf.setLineWidth(0.2);
-  pdf.line(margin, fy - 3, pageW - margin, fy - 3);
-  pdf.setFontSize(7);
-  pdf.setTextColor(120);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(`${company.nameEn} — Confidential`, margin, fy);
-  pdf.text(`Page ${pageNum} / ${totalPages}`, pageW - margin, fy, { align: 'right' });
-  pdf.text(`Generated: ${new Date().toLocaleString('en-GB')}`, pageW / 2, fy, { align: 'center' });
+function escapeHtml(s: string | undefined | null): string {
+  if (s === null || s === undefined) return '—';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 export async function generateRequestPDF({
@@ -137,311 +107,236 @@ export async function generateRequestPDF({
   statusLabel,
 }: GenerateArgs) {
   const isAr = language === 'ar';
-  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageW = 210;
-  const pageH = 297;
-  const margin = 12;
+  const dir = isAr ? 'rtl' : 'ltr';
+  const tr = (ar: string, en: string) => (isAr ? ar : en);
 
   const barcodeUrl = generateBarcodeDataURL(request.requestNumber);
 
-  // ========== PAGE 1: Main Form ==========
-  let y = drawHeader(pdf, pageW, margin, company, request, isAr, barcodeUrl);
+  const styles = `
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap');
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      .pdf-page {
+        width: 794px;
+        min-height: 1123px;
+        padding: 32px 36px;
+        background: #fff;
+        font-family: ${isAr ? "'Cairo'" : "'Inter'"}, system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+        color: #1a1a1a;
+        direction: ${dir};
+        page-break-after: always;
+        position: relative;
+      }
+      .brand-bar { height: 5px; background: #1a365d; margin: -32px -36px 0; }
+      .gold-bar  { height: 2px; background: #b8860b; margin: 0 -36px 16px; }
+      .header { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-bottom: 12px; border-bottom: 1px solid #1a365d; }
+      .logo { width: 80px; height: 80px; object-fit: contain; }
+      .company-info { flex: 1; text-align: center; }
+      .company-info h1 { color: #1a365d; font-size: 18px; font-weight: 700; }
+      .company-info h2 { color: #1a365d; font-size: 14px; font-weight: 600; margin-top: 2px; }
+      .company-info p { color: #666; font-size: 11px; margin-top: 3px; }
+      .req-info { text-align: ${isAr ? 'left' : 'right'}; min-width: 160px; }
+      .req-info .label { font-size: 10px; color: #666; }
+      .req-info .num { font-family: 'Courier New', monospace; font-size: 14px; font-weight: 700; color: #1a365d; }
+      .req-info img { margin-top: 4px; max-width: 160px; height: 40px; }
+      .title-bar { background: #1a365d; color: #fff; text-align: center; padding: 10px; border-radius: 4px; margin: 16px 0 12px; font-size: 14px; font-weight: 700; letter-spacing: 0.5px; }
+      .meta { display: flex; justify-content: space-between; font-size: 11px; color: #555; margin-bottom: 12px; }
+      .section-title { background: #f0f4f8; color: #1a365d; padding: 7px 10px; font-size: 12px; font-weight: 700; border-${isAr ? 'right' : 'left'}: 4px solid #1a365d; margin: 14px 0 8px; }
+      table.fields { width: 100%; border-collapse: collapse; }
+      table.fields td { border: 1px solid #d8dee9; padding: 6px 9px; font-size: 11px; vertical-align: middle; }
+      table.fields td.lbl { background: #f8fafc; color: #475569; font-weight: 600; width: 25%; font-size: 10px; }
+      table.fields td.val { color: #0f172a; }
+      .att-list { width: 100%; border-collapse: collapse; }
+      .att-list tr td { border-bottom: 1px solid #eef2f6; padding: 5px 8px; font-size: 11px; }
+      .att-list tr:nth-child(even) td { background: #fafbfd; }
+      .ok { color: #15803d; font-weight: 700; font-size: 11px; }
+      .signatures { display: flex; gap: 10px; margin-top: 8px; }
+      .sig-box { flex: 1; border: 1px solid #cbd5e1; border-radius: 4px; min-height: 110px; display: flex; flex-direction: column; }
+      .sig-box .sig-head { background: #f0f4f8; color: #1a365d; padding: 5px; text-align: center; font-size: 10px; font-weight: 700; border-bottom: 1px solid #cbd5e1; }
+      .sig-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 6px; position: relative; }
+      .sig-body img { max-width: 100%; max-height: 60px; }
+      .sig-foot { padding: 4px 6px; border-top: 1px dashed #cbd5e1; text-align: center; font-size: 9px; color: #64748b; }
+      .sig-foot .name { font-weight: 700; color: #1f2937; font-size: 10px; }
+      .stamp { position: absolute; top: 4px; ${isAr ? 'left' : 'right'}: 4px; color: #15803d; font-size: 9px; font-weight: 700; border: 1px solid #15803d; padding: 1px 4px; border-radius: 3px; }
+      .pending-stamp { color: #b8860b; border: 1px dashed #b8860b; padding: 4px 8px; border-radius: 3px; font-size: 9px; font-style: italic; }
+      .status-badge { display: inline-block; margin: 14px auto 0; padding: 6px 18px; border-radius: 18px; font-size: 12px; font-weight: 700; }
+      .status-approved { background: #d4edda; color: #155724; border: 1px solid #15803d; }
+      .status-other { background: #fff3cd; color: #856404; border: 1px solid #b8860b; }
+      .status-wrap { text-align: center; }
+      .footer { position: absolute; bottom: 14px; left: 36px; right: 36px; display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; padding-top: 6px; border-top: 1px solid #e2e8f0; }
+      .att-img { max-width: 100%; max-height: 880px; object-fit: contain; display: block; margin: 12px auto; border: 1px solid #cbd5e1; padding: 4px; background: #fff; }
+      .att-title { background: #b8860b; color: #fff; padding: 8px 12px; border-radius: 4px; text-align: center; font-weight: 700; font-size: 13px; margin-bottom: 8px; }
+      .issuance-box { background: #ecfdf5; border: 1px solid #15803d; border-radius: 4px; padding: 10px; margin-top: 8px; }
+      .issuance-box h3 { color: #15803d; font-size: 12px; margin-bottom: 6px; }
+    </style>
+  `;
 
-  // Title banner
-  pdf.setFillColor(BRAND.r, BRAND.g, BRAND.b);
-  pdf.roundedRect(margin, y, pageW - 2 * margin, 9, 1.5, 1.5, 'F');
-  pdf.setFontSize(12);
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont('helvetica', 'bold');
-  pdf.text('ID CARD REQUEST FORM', pageW / 2, y + 6, { align: 'center' });
-  y += 13;
+  const headerHtml = `
+    <div class="brand-bar"></div>
+    <div class="gold-bar"></div>
+    <div class="header">
+      ${company.logo ? `<img class="logo" src="${company.logo}" crossorigin="anonymous" />` : '<div style="width:80px"></div>'}
+      <div class="company-info">
+        <h1>${escapeHtml(company.nameAr)}</h1>
+        <h2>${escapeHtml(company.nameEn)}</h2>
+        <p>${escapeHtml(isAr ? company.addressAr : company.addressEn)}</p>
+        <p>${escapeHtml(company.phone)} &nbsp;|&nbsp; ${escapeHtml(company.email)} &nbsp;|&nbsp; ${escapeHtml(company.website)}</p>
+      </div>
+      <div class="req-info">
+        <div class="label">${tr('رقم الطلب', 'Request No.')}</div>
+        <div class="num">${escapeHtml(request.requestNumber)}</div>
+        ${barcodeUrl ? `<img src="${barcodeUrl}" />` : ''}
+      </div>
+    </div>
+  `;
 
-  // Meta line
-  pdf.setFontSize(8);
-  pdf.setTextColor(90);
-  pdf.setFont('helvetica', 'normal');
-  pdf.text(`Date: ${new Date(request.createdAt).toLocaleDateString('en-GB')}`, margin + 2, y);
-  pdf.text(
-    `Status: ${statusLabel}`,
-    pageW - margin - 2,
-    y,
-    { align: 'right' }
-  );
-  y += 4;
+  const footerHtml = `
+    <div class="footer">
+      <span>${escapeHtml(isAr ? company.nameAr : company.nameEn)} — ${tr('سري', 'Confidential')}</span>
+      <span>${tr('تاريخ التوليد', 'Generated')}: ${new Date().toLocaleString(isAr ? 'ar-SA' : 'en-GB')}</span>
+    </div>
+  `;
 
-  // Section: Employee Information
-  const drawSectionHeader = (title: string) => {
-    pdf.setFillColor(LIGHT.r, LIGHT.g, LIGHT.b);
-    pdf.rect(margin, y, pageW - 2 * margin, 6, 'F');
-    pdf.setDrawColor(BRAND.r, BRAND.g, BRAND.b);
-    pdf.setLineWidth(0.3);
-    pdf.line(margin, y + 6, pageW - 2 * margin + margin, y + 6);
-    pdf.setFontSize(9);
-    pdf.setTextColor(BRAND.r, BRAND.g, BRAND.b);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(title, margin + 2, y + 4.2);
-    y += 7;
-  };
+  const fieldRow = (lbl: string, val: string | undefined | null) =>
+    `<tr><td class="lbl">${escapeHtml(lbl)}</td><td class="val">${escapeHtml(val) || '—'}</td></tr>`;
 
-  // 2-column grid for fields
-  const drawFieldGrid = (rows: [string, string][]) => {
-    const colW = (pageW - 2 * margin) / 2;
-    const labelH = 4.5;
-    const valueH = 5.5;
-    const cellH = labelH + valueH;
+  const fieldsTable = `
+    <table class="fields">
+      ${fieldRow(tr('نوع الموظف', 'Employee Type'), request.employeeType === 'direct' ? tr('موظف مباشر', 'Direct Employee') : tr('موظف مقاول', 'Contractor Employee'))}
+      ${fieldRow(tr('القسم', 'Department'), isAr ? department?.nameAr : department?.nameEn)}
+      ${fieldRow(tr('الاسم بالعربية', 'Name (Arabic)'), request.nameAr)}
+      ${fieldRow(tr('الاسم بالإنجليزية', 'Name (English)'), request.nameEn)}
+      ${fieldRow(tr('الجنسية', 'Nationality'), request.nationality)}
+      ${fieldRow(tr('الرقم الوظيفي', 'Employee No.'), request.employeeId)}
+      ${fieldRow(tr('المسمى الوظيفي', 'Job Title'), request.jobTitle)}
+      ${fieldRow(tr('رقم الهوية / الإقامة', 'National ID / Iqama'), request.nationalIdNo)}
+      ${fieldRow(tr('تاريخ ومكان الإصدار', 'Date & Issue Place'), request.dateIssuePlace)}
+      ${fieldRow(tr('تاريخ الميلاد', 'Birth Date'), request.birthDate)}
+      ${fieldRow(tr('فصيلة الدم', 'Blood Type'), request.bloodType)}
+      ${fieldRow(tr('اسم الشركة وعنوانها', 'Company Name & Tel.'), request.companyNameTel)}
+    </table>
+  `;
 
-    rows.forEach((row, i) => {
-      const col = i % 2;
-      const x = margin + col * colW;
-      if (col === 0 && i > 0) y += cellH;
+  const submitTable = `
+    <table class="fields">
+      ${fieldRow(tr('مقدم الطلب', 'Submitted By'), creator ? (isAr ? creator.nameAr : creator.nameEn) : (request.createdBy === 'external' ? tr('نموذج خارجي', 'External Web Form') : '—'))}
+      ${fieldRow(tr('تاريخ التقديم', 'Submission Date'), new Date(request.createdAt).toLocaleString(isAr ? 'ar-SA' : 'en-GB'))}
+      ${fieldRow(tr('الحالة الحالية', 'Current Status'), statusLabel)}
+      ${fieldRow(tr('آخر تحديث', 'Last Update'), new Date(request.updatedAt).toLocaleString(isAr ? 'ar-SA' : 'en-GB'))}
+    </table>
+  `;
 
-      // Label area
-      pdf.setFillColor(248, 250, 252);
-      pdf.rect(x, y, colW, labelH, 'F');
-      pdf.setFontSize(7);
-      pdf.setTextColor(100);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(row[0].toUpperCase(), x + 2, y + 3.2);
+  const attChecklist = request.attachments.length === 0
+    ? `<p style="color:#94a3b8;font-size:11px;padding:6px">${tr('لا توجد مرفقات', 'No attachments submitted.')}</p>`
+    : `<table class="att-list">${request.attachments
+        .map(
+          (a, i) =>
+            `<tr><td style="width:30px"><span class="ok">✓</span></td><td>${i + 1}. ${escapeHtml(a.name)}</td><td style="text-align:${isAr ? 'left' : 'right'};color:#64748b">${escapeHtml(a.type)}</td></tr>`
+        )
+        .join('')}</table>`;
 
-      // Value area
-      pdf.setDrawColor(220);
-      pdf.setLineWidth(0.1);
-      pdf.rect(x, y + labelH, colW, valueH);
-      pdf.setFontSize(9);
-      pdf.setTextColor(30);
-      pdf.setFont('helvetica', 'normal');
-      const text = String(row[1] || '—').slice(0, 60);
-      pdf.text(text, x + 2, y + labelH + 3.8);
-    });
-    if (rows.length % 2 !== 0) {
-      // close half row
-      const x = margin + colW;
-      pdf.setFillColor(248, 250, 252);
-      pdf.rect(x, y, colW, labelH, 'F');
-      pdf.setDrawColor(220);
-      pdf.rect(x, y + labelH, colW, valueH);
-    }
-    y += cellH + 1;
-  };
-
-  drawSectionHeader('1. Request & Employee Information');
-  drawFieldGrid([
-    ['Employee Type', request.employeeType === 'direct' ? 'Direct Employee' : 'Contractor Employee'],
-    ['Department', department?.nameEn || '—'],
-    ['Name (English)', request.nameEn],
-    ['Name (Arabic)', request.nameAr],
-    ['Nationality', request.nationality],
-    ['ID / Employee Number', request.employeeId],
-    ['Job Title', request.jobTitle],
-    ['National ID / Iqama No.', request.nationalIdNo],
-    ['Date & Issue Place', request.dateIssuePlace],
-    ['Birth Date', request.birthDate],
-    ['Blood Type', request.bloodType],
-    ['Company Name & Tel.', request.companyNameTel],
-  ]);
-
-  // Section: Submitter
-  drawSectionHeader('2. Submission Details');
-  drawFieldGrid([
-    ['Submitted By', creator ? creator.nameEn : (request.createdBy === 'external' ? 'External Web Form' : '—')],
-    ['Submission Date', new Date(request.createdAt).toLocaleString('en-GB')],
-    ['Current Status', statusLabel],
-    ['Last Update', new Date(request.updatedAt).toLocaleString('en-GB')],
-  ]);
-
-  // Section: Attachments checklist (names only on form page)
-  drawSectionHeader('3. Submitted Attachments Checklist');
-  if (request.attachments.length === 0) {
-    pdf.setFontSize(9);
-    pdf.setTextColor(120);
-    pdf.text('No attachments submitted.', margin + 2, y + 4);
-    y += 6;
-  } else {
-    const attRowH = 5.5;
-    request.attachments.forEach((a, i) => {
-      const bg = i % 2 === 0 ? [255, 255, 255] : [250, 251, 253];
-      pdf.setFillColor(bg[0], bg[1], bg[2]);
-      pdf.rect(margin, y, pageW - 2 * margin, attRowH, 'F');
-      pdf.setDrawColor(230);
-      pdf.setLineWidth(0.1);
-      pdf.rect(margin, y, pageW - 2 * margin, attRowH);
-      // checkmark
-      pdf.setTextColor(21, 128, 61);
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('OK', margin + 2, y + 3.8);
-      // file name
-      pdf.setTextColor(40);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(8);
-      pdf.text(`${i + 1}. ${a.name}`, margin + 12, y + 3.8);
-      // type
-      pdf.setTextColor(120);
-      pdf.text(a.type, pageW - margin - 2, y + 3.8, { align: 'right' });
-      y += attRowH;
-    });
-    y += 1;
-  }
-
-  // Section: Approvals & Signatures
-  y += 2;
-  drawSectionHeader('4. Approvals & Signatures');
-
-  const sigBoxW = (pageW - 2 * margin - 8) / 3;
-  const sigBoxH = 32;
+  // Signatures
   const stages = [
-    { key: 'pending_dept_approval', label: 'Department Manager' },
-    { key: 'pending_safety_approval', label: 'Safety Team' },
-    { key: 'pending_id_review', label: 'ID Card Section' },
+    { key: 'pending_dept_approval', label: tr('مدير القسم', 'Department Manager') },
+    { key: 'pending_safety_approval', label: tr('فريق السلامة', 'Safety Team') },
+    { key: 'pending_id_review', label: tr('قسم بطاقات الهوية', 'ID Card Section') },
   ];
 
-  for (let i = 0; i < stages.length; i++) {
-    const x = margin + i * (sigBoxW + 4);
-    pdf.setDrawColor(180);
-    pdf.setLineWidth(0.2);
-    pdf.roundedRect(x, y, sigBoxW, sigBoxH, 1, 1);
+  const signaturesHtml = `
+    <div class="signatures">
+      ${stages
+        .map(stg => {
+          const entry = request.approvalHistory.find(h => h.stage === stg.key && h.action === 'approve');
+          const approver = approvers.find(a => a.stage === stg.key);
+          if (entry && approver?.user) {
+            return `<div class="sig-box">
+              <div class="sig-head">${stg.label}</div>
+              <div class="sig-body">
+                <span class="stamp">${tr('معتمد', 'APPROVED')}</span>
+                ${approver.user.signature ? `<img src="${approver.user.signature}" />` : `<span style="color:#94a3b8;font-size:10px">${tr('بدون توقيع', 'No signature')}</span>`}
+              </div>
+              <div class="sig-foot">
+                <div class="name">${escapeHtml(isAr ? approver.user.nameAr : approver.user.nameEn)}</div>
+                <div>${new Date(entry.timestamp).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB')}</div>
+              </div>
+            </div>`;
+          }
+          return `<div class="sig-box">
+            <div class="sig-head">${stg.label}</div>
+            <div class="sig-body"><span class="pending-stamp">${tr('بانتظار التوقيع', 'Pending signature')}</span></div>
+            <div class="sig-foot">${tr('التوقيع والتاريخ', 'Signature & Date')}</div>
+          </div>`;
+        })
+        .join('')}
+    </div>
+  `;
 
-    // header strip
-    pdf.setFillColor(LIGHT.r, LIGHT.g, LIGHT.b);
-    pdf.rect(x, y, sigBoxW, 5, 'F');
-    pdf.setFontSize(8);
-    pdf.setTextColor(BRAND.r, BRAND.g, BRAND.b);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(stages[i].label, x + sigBoxW / 2, y + 3.5, { align: 'center' });
+  // Issuance details (if approved and present)
+  const iss = request.issuance;
+  const issuanceHtml =
+    request.status === 'approved' && iss
+      ? `<div class="section-title">${tr('5. بيانات الإصدار النهائي', '5. Final Issuance Details')}</div>
+         <div class="issuance-box">
+           <table class="fields">
+             ${fieldRow(tr('رقم البطاقة', 'Card No.'), iss.cardNumber)}
+             ${fieldRow(tr('التسلسل', 'Serial'), iss.serial)}
+             ${fieldRow(tr('تاريخ الإصدار', 'Issue Date'), iss.issueDate)}
+             ${fieldRow(tr('تاريخ الانتهاء', 'Expiry Date'), iss.expiryDate)}
+             ${fieldRow(tr('أخذت البصمة', 'Fingerprint Taken'), iss.fingerprintTaken ? tr('نعم', 'Yes') : tr('لا', 'No'))}
+             ${fieldRow(tr('الإرشادات والتعليمات', 'Instructions Given'), iss.instructionsGiven ? tr('نعم', 'Yes') : tr('لا', 'No'))}
+             ${fieldRow(tr('إدخال البيانات في الحاسب الآلي', 'Data Entered in System'), iss.dataEntered ? tr('نعم', 'Yes') : tr('لا', 'No'))}
+             ${fieldRow(tr('بواسطة', 'Issued By'), iss.issuedByName)}
+           </table>
+         </div>`
+      : '';
 
-    // find approval entry
-    const entry = request.approvalHistory.find(h => h.stage === stages[i].key && h.action === 'approve');
-    const approver = approvers.find(a => a.stage === stages[i].key);
+  const statusClass = request.status === 'approved' ? 'status-approved' : 'status-other';
+  const statusBadge = `<div class="status-wrap"><span class="status-badge ${statusClass}">${request.status === 'approved' ? '✓ ' : ''}${escapeHtml(statusLabel.toUpperCase())}</span></div>`;
 
-    if (entry && approver?.user) {
-      // signature image
-      if (approver.user.signature) {
-        try {
-          const sigImg = await loadImage(approver.user.signature);
-          const maxW = sigBoxW - 6;
-          const maxH = 14;
-          const ratio = Math.min(maxW / sigImg.w, maxH / sigImg.h);
-          const w = sigImg.w * ratio;
-          const h = sigImg.h * ratio;
-          pdf.addImage(approver.user.signature, x + (sigBoxW - w) / 2, y + 7, w, h);
-        } catch {}
-      }
-      // Name + date
-      pdf.setFontSize(7);
-      pdf.setTextColor(40);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text(approver.user.nameEn, x + sigBoxW / 2, y + sigBoxH - 7, { align: 'center', maxWidth: sigBoxW - 4 });
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(100);
-      pdf.text(new Date(entry.timestamp).toLocaleDateString('en-GB'), x + sigBoxW / 2, y + sigBoxH - 3, { align: 'center' });
-      // Approved stamp
-      pdf.setTextColor(21, 128, 61);
-      pdf.setFontSize(7);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('APPROVED', x + sigBoxW - 3, y + 9, { align: 'right' });
-    } else {
-      pdf.setFontSize(7);
-      pdf.setTextColor(160);
-      pdf.setFont('helvetica', 'italic');
-      pdf.text('Pending signature', x + sigBoxW / 2, y + sigBoxH / 2, { align: 'center' });
-      pdf.setDrawColor(200);
-      pdf.line(x + 4, y + sigBoxH - 6, x + sigBoxW - 4, y + sigBoxH - 6);
-      pdf.setFontSize(6);
-      pdf.text('Signature & Date', x + sigBoxW / 2, y + sigBoxH - 3, { align: 'center' });
-    }
-  }
-  y += sigBoxH + 4;
+  // Page 1
+  let html = styles + `<div class="pdf-page">
+    ${headerHtml}
+    <div class="title-bar">${tr('نموذج طلب إصدار بطاقة هوية', 'ID CARD REQUEST FORM')}</div>
+    <div class="meta">
+      <span>${tr('التاريخ', 'Date')}: ${new Date(request.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB')}</span>
+      <span>${tr('الحالة', 'Status')}: ${escapeHtml(statusLabel)}</span>
+    </div>
+    <div class="section-title">${tr('1. بيانات الطلب والموظف', '1. Request & Employee Information')}</div>
+    ${fieldsTable}
+    <div class="section-title">${tr('2. بيانات التقديم', '2. Submission Details')}</div>
+    ${submitTable}
+    <div class="section-title">${tr('3. المرفقات المقدمة', '3. Submitted Attachments')}</div>
+    ${attChecklist}
+    <div class="section-title">${tr('4. الموافقات والتواقيع', '4. Approvals & Signatures')}</div>
+    ${signaturesHtml}
+    ${issuanceHtml}
+    ${statusBadge}
+    ${footerHtml}
+  </div>`;
 
-  // Final status badge
-  const finalApproved = request.status === 'approved';
-  if (finalApproved) {
-    pdf.setFillColor(212, 237, 218);
-    pdf.setDrawColor(21, 128, 61);
-    pdf.setLineWidth(0.4);
-    pdf.roundedRect(pageW / 2 - 30, y, 60, 9, 2, 2, 'FD');
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(21, 128, 61);
-    pdf.text(`✓ ${statusLabel.toUpperCase()}`, pageW / 2, y + 6, { align: 'center' });
-  } else {
-    pdf.setFillColor(255, 243, 205);
-    pdf.setDrawColor(184, 134, 11);
-    pdf.roundedRect(pageW / 2 - 30, y, 60, 9, 2, 2, 'FD');
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(133, 100, 4);
-    pdf.text(statusLabel.toUpperCase(), pageW / 2, y + 6, { align: 'center' });
-  }
-
-  // ========== Attachment pages ==========
+  // Attachment pages
   for (let i = 0; i < request.attachments.length; i++) {
     const att = request.attachments[i];
     if (!att.data) continue;
-    pdf.addPage();
-    let ay = drawHeader(pdf, pageW, margin, company, request, isAr, barcodeUrl);
-
-    // Attachment title bar
-    pdf.setFillColor(GOLD.r, GOLD.g, GOLD.b);
-    pdf.roundedRect(margin, ay, pageW - 2 * margin, 9, 1.5, 1.5, 'F');
-    pdf.setFontSize(11);
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(`ATTACHMENT ${i + 1} OF ${request.attachments.length}`, pageW / 2, ay + 6, { align: 'center' });
-    ay += 12;
-
-    pdf.setFontSize(10);
-    pdf.setTextColor(BRAND.r, BRAND.g, BRAND.b);
-    pdf.setFont('helvetica', 'bold');
-    pdf.text(att.name, margin, ay);
-    pdf.setFontSize(8);
-    pdf.setTextColor(120);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text(`Type: ${att.type}`, margin, ay + 4.5);
-    ay += 7;
-
+    let body = '';
     if (att.type.startsWith('image/')) {
-      try {
-        const img = await loadImage(att.data);
-        const maxW = pageW - 2 * margin;
-        const maxH = pageH - ay - 18;
-        const ratio = Math.min(maxW / img.w, maxH / img.h);
-        const w = img.w * ratio;
-        const h = img.h * ratio;
-        // border around image
-        pdf.setDrawColor(200);
-        pdf.setLineWidth(0.3);
-        pdf.rect(margin + (maxW - w) / 2 - 1, ay - 1, w + 2, h + 2);
-        pdf.addImage(att.data, margin + (maxW - w) / 2, ay, w, h, undefined, 'FAST');
-      } catch {
-        pdf.setFontSize(10);
-        pdf.setTextColor(80);
-        pdf.text('(Could not embed image preview)', margin, ay + 10);
-      }
+      body = `<img class="att-img" src="${att.data}" />`;
     } else if (att.type === 'application/pdf') {
-      pdf.setFillColor(LIGHT.r, LIGHT.g, LIGHT.b);
-      pdf.roundedRect(margin, ay, pageW - 2 * margin, 40, 2, 2, 'F');
-      pdf.setFontSize(11);
-      pdf.setTextColor(BRAND.r, BRAND.g, BRAND.b);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('PDF Document Attached', pageW / 2, ay + 15, { align: 'center' });
-      pdf.setFontSize(9);
-      pdf.setTextColor(80);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text('Please download the original file from the system to view its contents.', pageW / 2, ay + 23, { align: 'center' });
-      pdf.text(`File name: ${att.name}`, pageW / 2, ay + 30, { align: 'center' });
+      body = `<div style="background:#f0f4f8;border-radius:6px;padding:40px;text-align:center;margin-top:20px">
+        <h2 style="color:#1a365d">${tr('ملف PDF مرفق', 'PDF Document Attached')}</h2>
+        <p style="color:#475569;margin-top:10px">${tr('يرجى تحميل الملف الأصلي من النظام لعرضه.', 'Please download the original file from the system to view its contents.')}</p>
+        <p style="margin-top:8px;color:#64748b">${escapeHtml(att.name)}</p>
+      </div>`;
     } else {
-      pdf.setFontSize(10);
-      pdf.setTextColor(80);
-      pdf.text(`File: ${att.name} (${att.type})`, margin, ay + 10);
+      body = `<p style="padding:20px;color:#475569">${tr('ملف', 'File')}: ${escapeHtml(att.name)} (${escapeHtml(att.type)})</p>`;
     }
+    html += `<div class="pdf-page">
+      ${headerHtml}
+      <div class="att-title">${tr('المرفق', 'ATTACHMENT')} ${i + 1} / ${request.attachments.length}: ${escapeHtml(att.name)}</div>
+      ${body}
+      ${footerHtml}
+    </div>`;
   }
 
-  // ========== Add footers to all pages ==========
-  const totalPages = pdf.getNumberOfPages();
-  for (let p = 1; p <= totalPages; p++) {
-    pdf.setPage(p);
-    drawFooter(pdf, pageW, pageH, margin, company, p, totalPages);
-  }
-
-  pdf.save(`${request.requestNumber}.pdf`);
+  await renderHtmlToPdf(html, `${request.requestNumber}.pdf`);
 }
