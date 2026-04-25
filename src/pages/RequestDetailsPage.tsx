@@ -396,6 +396,73 @@ export default function RequestDetailsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Issuance dialog */}
+      <Dialog open={showIssuance} onOpenChange={setShowIssuance}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><IdCard className="w-5 h-5 text-primary" /> {language === 'ar' ? 'بيانات إصدار البطاقة' : 'Card Issuance Details'}</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+            <div>
+              <Label>{language === 'ar' ? 'رقم البطاقة' : 'Card Number'} *</Label>
+              <Input value={issuanceForm.cardNumber} onChange={e => setIssuanceForm({ ...issuanceForm, cardNumber: e.target.value })} />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'التسلسل' : 'Serial'} *</Label>
+              <Input value={issuanceForm.serial} onChange={e => setIssuanceForm({ ...issuanceForm, serial: e.target.value })} />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'تاريخ الإصدار' : 'Issue Date'} *</Label>
+              <Input type="date" value={issuanceForm.issueDate} onChange={e => setIssuanceForm({ ...issuanceForm, issueDate: e.target.value })} />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'تاريخ الانتهاء' : 'Expiry Date'} *</Label>
+              <Input type="date" value={issuanceForm.expiryDate} onChange={e => setIssuanceForm({ ...issuanceForm, expiryDate: e.target.value })} />
+            </div>
+            <div>
+              <Label>{language === 'ar' ? 'بواسطة' : 'Issued By'}</Label>
+              <Input value={issuanceForm.issuedByName} onChange={e => setIssuanceForm({ ...issuanceForm, issuedByName: e.target.value })} />
+            </div>
+            <div className="md:col-span-2 space-y-2 bg-muted/30 p-3 rounded-lg">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={issuanceForm.fingerprintTaken} onCheckedChange={c => setIssuanceForm({ ...issuanceForm, fingerprintTaken: !!c })} />
+                <span className="text-sm">{language === 'ar' ? 'أخذت له بصمة' : 'Fingerprint taken'}</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={issuanceForm.instructionsGiven} onCheckedChange={c => setIssuanceForm({ ...issuanceForm, instructionsGiven: !!c })} />
+                <span className="text-sm">{language === 'ar' ? 'أعطي الإرشادات والتعليمات' : 'Instructions given'}</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox checked={issuanceForm.dataEntered} onCheckedChange={c => setIssuanceForm({ ...issuanceForm, dataEntered: !!c })} />
+                <span className="text-sm">{language === 'ar' ? 'إدخال البيانات في الحاسب الآلي' : 'Data entered in system'}</span>
+              </label>
+            </div>
+          </div>
+          <div className="flex gap-3 mt-4">
+            <Button
+              onClick={() => {
+                if (!issuanceForm.cardNumber || !issuanceForm.serial || !issuanceForm.expiryDate) {
+                  toast({ title: language === 'ar' ? 'يرجى تعبئة الحقول المطلوبة' : 'Please fill required fields', variant: 'destructive' });
+                  return;
+                }
+                setIssuance(request.id, {
+                  ...issuanceForm,
+                  issuedById: currentUser!.id,
+                  issuedByName: issuanceForm.issuedByName || (language === 'ar' ? currentUser!.nameAr : currentUser!.nameEn),
+                  issuedAt: new Date().toISOString(),
+                });
+                toast({ title: language === 'ar' ? 'تم حفظ بيانات الإصدار' : 'Issuance saved' });
+                setShowIssuance(false);
+              }}
+              className="bg-success text-success-foreground gap-2"
+            >
+              <Save className="w-4 h-4" /> {language === 'ar' ? 'حفظ' : 'Save'}
+            </Button>
+            <Button variant="outline" onClick={() => setShowIssuance(false)}>{language === 'ar' ? 'إلغاء' : 'Cancel'}</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
