@@ -9,17 +9,20 @@ import { StatusBadge } from './DashboardPage';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
-import { ArrowRight, ArrowLeft, Printer, CheckCircle, XCircle, PauseCircle, Download, Eye, Trash2, FileDown } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Printer, CheckCircle, XCircle, PauseCircle, Download, Eye, Trash2, FileDown, IdCard, Save } from 'lucide-react';
 import Barcode from 'react-barcode';
-import { RequestStatus } from '@/types';
+import { RequestStatus, IssuanceDetails } from '@/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { generateRequestPDF } from '@/lib/pdfGenerator';
 
 export default function RequestDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { t, language } = useLanguage();
   const { currentUser, getUserById } = useAuth();
-  const { getRequestById, updateRequestStatus, deleteRequest } = useRequests();
+  const { getRequestById, updateRequestStatus, deleteRequest, setIssuance } = useRequests();
   const { settings: company } = useCompany();
   const navigate = useNavigate();
   const printRef = useRef<HTMLDivElement>(null);
