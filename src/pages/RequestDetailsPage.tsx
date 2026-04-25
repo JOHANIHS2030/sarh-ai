@@ -29,6 +29,19 @@ export default function RequestDetailsPage() {
   const [reason, setReason] = useState('');
   const [showReasonInput, setShowReasonInput] = useState<'hold' | 'reject' | null>(null);
   const [previewAttachment, setPreviewAttachment] = useState<{ name: string; data: string; type: string } | null>(null);
+  const [showIssuance, setShowIssuance] = useState(false);
+  const [issuanceForm, setIssuanceForm] = useState<IssuanceDetails>({
+    cardNumber: '',
+    serial: '',
+    issueDate: new Date().toISOString().slice(0, 10),
+    expiryDate: '',
+    fingerprintTaken: false,
+    instructionsGiven: false,
+    dataEntered: false,
+    issuedById: '',
+    issuedByName: '',
+    issuedAt: '',
+  });
 
   const request = getRequestById(id || '');
   const departments = useMemo(() => {
