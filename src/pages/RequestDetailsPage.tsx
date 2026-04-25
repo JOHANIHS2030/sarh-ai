@@ -303,6 +303,18 @@ export default function RequestDetailsPage() {
             </Button>
           </>
         )}
+        {request.status === 'approved' && (currentUser?.systemRole === 'id_card_executor' || currentUser?.role === 'admin') && (
+          <Button
+            onClick={() => {
+              if (request.issuance) setIssuanceForm(request.issuance);
+              else setIssuanceForm(prev => ({ ...prev, issuedById: currentUser!.id, issuedByName: language === 'ar' ? currentUser!.nameAr : currentUser!.nameEn }));
+              setShowIssuance(true);
+            }}
+            className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+          >
+            <IdCard className="w-4 h-4" /> {request.issuance ? (language === 'ar' ? 'تعديل بيانات البطاقة' : 'Edit Card Data') : (language === 'ar' ? 'تسجيل بيانات البطاقة' : 'Record Card Data')}
+          </Button>
+        )}
         {request.status === 'approved' && (
           <Button onClick={handlePrint} className="gradient-primary text-primary-foreground gap-2">
             <Printer className="w-4 h-4" /> {t('print')}
