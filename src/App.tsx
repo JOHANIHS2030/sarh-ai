@@ -78,12 +78,15 @@ const App = () => (
           <CompanyProvider>
             <ExternalUsersProvider>
               <RequestProvider>
-                <BrowserRouter>
-                  <Routes>
-                    <Route path="/external-form" element={<ExternalFormPage />} />
-                    <Route path="/*" element={<AuthenticatedApp />} />
-                  </Routes>
-                </BrowserRouter>
+                <VehicleStickerProvider>
+                  <BrowserRouter>
+                    <Routes>
+                      <Route path="/external-form" element={<ExternalFormPage />} />
+                      <Route path="/external-vehicle-sticker" element={<ExternalVehicleStickerPage />} />
+                      <Route path="/*" element={<AuthenticatedApp />} />
+                    </Routes>
+                  </BrowserRouter>
+                </VehicleStickerProvider>
               </RequestProvider>
             </ExternalUsersProvider>
           </CompanyProvider>
