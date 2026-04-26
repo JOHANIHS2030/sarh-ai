@@ -4,7 +4,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { NavLink } from '@/components/NavLink';
 import {
   LayoutDashboard, FilePlus, FileText, CheckSquare, LogOut, Globe, Shield,
-  ChevronLeft, ChevronRight, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2
+  ChevronLeft, ChevronRight, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationsBell from '@/components/NotificationsBell';
@@ -23,20 +23,36 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isSafety = currentUser?.systemRole === 'safety_orientation' || currentUser?.systemRole === 'ehss_manager';
   const isDeptManager = currentUser?.systemRole === 'dept_manager' || currentUser?.systemRole === 'hr_manager';
 
-  const navItems = [
-    { to: '/', icon: LayoutDashboard, label: t('dashboard'), show: true },
-    { to: '/new-request', icon: FilePlus, label: t('newRequest'), show: true },
-    { to: '/my-requests', icon: FileText, label: t('myRequests'), show: true },
-    { to: '/pending-approvals', icon: CheckSquare, label: t('pendingApprovals'), show: isDeptManager || isSafety || isIdCardTeam || isAdmin },
-    { to: '/all-requests', icon: FileText, label: t('allRequests'), show: isAdmin || isIdCardTeam },
-    { to: '/workflow', icon: GitBranch, label: language === 'ar' ? 'سير العمل' : 'Workflow', show: true },
-    { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin },
-    { to: '/builder', icon: Wand2, label: language === 'ar' ? 'منشئ النماذج والتقارير' : 'Forms & Reports Builder', show: isAdmin },
-    { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin },
-    { to: '/settings/external-users', icon: ExternalLink, label: language === 'ar' ? 'مستخدمو الصفحات الخارجية' : 'External Users', show: isAdmin },
-    { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin },
-    { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin },
+  const navItems: { to: string; icon: typeof LayoutDashboard; label: string; show: boolean; section: string }[] = [
+    { to: '/', icon: LayoutDashboard, label: t('dashboard'), show: true, section: 'main' },
+
+    { to: '/new-request', icon: FilePlus, label: t('newRequest'), show: true, section: 'idcards' },
+    { to: '/my-requests', icon: FileText, label: t('myRequests'), show: true, section: 'idcards' },
+    { to: '/pending-approvals', icon: CheckSquare, label: t('pendingApprovals'), show: isDeptManager || isSafety || isIdCardTeam || isAdmin, section: 'idcards' },
+    { to: '/all-requests', icon: FileText, label: t('allRequests'), show: isAdmin || isIdCardTeam, section: 'idcards' },
+
+    { to: '/stickers/new', icon: FilePlus, label: language === 'ar' ? 'طلب ملصق جديد' : 'New Sticker', show: true, section: 'stickers' },
+    { to: '/stickers/my', icon: Car, label: language === 'ar' ? 'ملصقاتي' : 'My Stickers', show: true, section: 'stickers' },
+    { to: '/stickers/pending', icon: CheckSquare, label: language === 'ar' ? 'موافقات الملصقات' : 'Sticker Approvals', show: isDeptManager || isIdCardTeam || isAdmin, section: 'stickers' },
+    { to: '/stickers/all', icon: FileText, label: language === 'ar' ? 'جميع الملصقات' : 'All Stickers', show: isAdmin || isIdCardTeam, section: 'stickers' },
+
+    { to: '/workflow', icon: GitBranch, label: language === 'ar' ? 'سير العمل' : 'Workflow', show: true, section: 'admin' },
+    { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin, section: 'admin' },
+    { to: '/builder', icon: Wand2, label: language === 'ar' ? 'منشئ النماذج والتقارير' : 'Forms & Reports Builder', show: isAdmin, section: 'admin' },
+    { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin, section: 'admin' },
+    { to: '/settings/external-users', icon: ExternalLink, label: language === 'ar' ? 'مستخدمو الصفحات الخارجية' : 'External Users', show: isAdmin, section: 'admin' },
+    { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin, section: 'admin' },
+    { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin, section: 'admin' },
   ];
+
+  const sectionLabels: Record<string, { ar: string; en: string }> = {
+    main: { ar: '', en: '' },
+    idcards: { ar: 'بطاقات الهوية', en: 'ID Cards' },
+    stickers: { ar: 'ملصقات المركبات', en: 'Vehicle Stickers' },
+    admin: { ar: 'الإدارة', en: 'Administration' },
+  };
+
+  const sectionsOrder = ['main', 'idcards', 'stickers', 'admin'];
 
   const externalUrl = `${window.location.origin}/external-form`;
 
@@ -59,18 +75,32 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
 
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {navItems.filter(n => n.show).map(item => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors text-sm"
-              activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span className="truncate">{item.label}</span>}
-            </NavLink>
-          ))}
+          {sectionsOrder.map(section => {
+            const items = navItems.filter(n => n.show && n.section === section);
+            if (items.length === 0) return null;
+            const label = sectionLabels[section];
+            return (
+              <div key={section} className="mb-2">
+                {sidebarOpen && label.ar && (
+                  <p className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 px-3 pt-2 pb-1">
+                    {language === 'ar' ? label.ar : label.en}
+                  </p>
+                )}
+                {items.map(item => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === '/'}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors text-sm"
+                    activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
+                  >
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    {sidebarOpen && <span className="truncate">{item.label}</span>}
+                  </NavLink>
+                ))}
+              </div>
+            );
+          })}
         </nav>
 
         <div className="p-3 border-t border-sidebar-border space-y-2">

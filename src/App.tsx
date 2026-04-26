@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { RequestProvider } from "@/contexts/RequestContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { ExternalUsersProvider } from "@/contexts/ExternalUsersContext";
+import { VehicleStickerProvider } from "@/contexts/VehicleStickerContext";
 import CompanySettingsPage from "@/pages/CompanySettingsPage";
 import LoginPage from "@/pages/LoginPage";
 import AppLayout from "@/components/AppLayout";
@@ -19,10 +20,16 @@ import RequestDetailsPage from "@/pages/RequestDetailsPage";
 import UsersSettingsPage from "@/pages/UsersSettingsPage";
 import DepartmentsSettingsPage from "@/pages/DepartmentsSettingsPage";
 import ExternalFormPage from "@/pages/ExternalFormPage";
+import ExternalVehicleStickerPage from "@/pages/ExternalVehicleStickerPage";
 import ExternalUsersSettingsPage from "@/pages/ExternalUsersSettingsPage";
 import AuditLogPage from "@/pages/AuditLogPage";
 import WorkflowPage from "@/pages/WorkflowPage";
 import FormBuilderPage from "@/pages/FormBuilderPage";
+import NewVehicleStickerPage from "@/pages/stickers/NewVehicleStickerPage";
+import MyStickersPage from "@/pages/stickers/MyStickersPage";
+import StickerPendingApprovalsPage from "@/pages/stickers/StickerPendingApprovalsPage";
+import AllStickersPage from "@/pages/stickers/AllStickersPage";
+import VehicleStickerDetailsPage from "@/pages/stickers/VehicleStickerDetailsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +48,14 @@ function AuthenticatedApp() {
         <Route path="/pending-approvals" element={<PendingApprovalsPage />} />
         <Route path="/all-requests" element={<AllRequestsPage />} />
         <Route path="/request/:id" element={<RequestDetailsPage />} />
+
+        {/* Vehicle Stickers */}
+        <Route path="/stickers/new" element={<NewVehicleStickerPage />} />
+        <Route path="/stickers/my" element={<MyStickersPage />} />
+        <Route path="/stickers/pending" element={<StickerPendingApprovalsPage />} />
+        <Route path="/stickers/all" element={<AllStickersPage />} />
+        <Route path="/stickers/request/:id" element={<VehicleStickerDetailsPage />} />
+
         <Route path="/settings/users" element={<UsersSettingsPage />} />
         <Route path="/settings/external-users" element={<ExternalUsersSettingsPage />} />
         <Route path="/settings/departments" element={<DepartmentsSettingsPage />} />
@@ -63,12 +78,15 @@ const App = () => (
           <CompanyProvider>
             <ExternalUsersProvider>
               <RequestProvider>
-                <BrowserRouter>
-                  <Routes>
-                    <Route path="/external-form" element={<ExternalFormPage />} />
-                    <Route path="/*" element={<AuthenticatedApp />} />
-                  </Routes>
-                </BrowserRouter>
+                <VehicleStickerProvider>
+                  <BrowserRouter>
+                    <Routes>
+                      <Route path="/external-form" element={<ExternalFormPage />} />
+                      <Route path="/external-vehicle-sticker" element={<ExternalVehicleStickerPage />} />
+                      <Route path="/*" element={<AuthenticatedApp />} />
+                    </Routes>
+                  </BrowserRouter>
+                </VehicleStickerProvider>
               </RequestProvider>
             </ExternalUsersProvider>
           </CompanyProvider>
