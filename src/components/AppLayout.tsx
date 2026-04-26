@@ -92,10 +92,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </button>
           <button
             onClick={logout}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors w-full text-sm"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-white hover:bg-destructive/30 transition-colors w-full text-sm font-medium"
           >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            {sidebarOpen && <span>{t('logout')}</span>}
+            <LogOut className="w-5 h-5 flex-shrink-0 text-white" />
+            {sidebarOpen && <span className="text-white">{t('logout')}</span>}
           </button>
         </div>
       </aside>

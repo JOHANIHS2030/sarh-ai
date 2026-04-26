@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,6 +46,47 @@ export default function NotificationsBell() {
   }, [requests, currentUser]);
 
   const unreadCount = pendingForMe.filter(r => !readIds.includes(r.id)).length;
+
+  // Track previous count to detect new notifications
+  const prevUnreadRef = useRef<number>(unreadCount);
+  const initializedRef = useRef(false);
+
+  // Play notification sound when unread count increases
+  useEffect(() => {
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      prevUnreadRef.current = unreadCount;
+      return;
+    }
+    if (unreadCount > prevUnreadRef.current) {
+      try {
+        const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext);
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const playTone = (freq: number, start: number, duration: number) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0, ctx.currentTime + start);
+            gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + start + 0.02);
+            gain.gain.linearRampToValueAtTime(0, ctx.currentTime + start + duration);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + start);
+            osc.stop(ctx.currentTime + start + duration);
+          };
+          // Pleasant two-tone "ding"
+          playTone(880, 0, 0.18);
+          playTone(1320, 0.12, 0.22);
+          setTimeout(() => ctx.close().catch(() => {}), 600);
+        }
+      } catch {
+        // Ignore audio errors (autoplay policies, etc.)
+      }
+    }
+    prevUnreadRef.current = unreadCount;
+  }, [unreadCount]);
 
   // Persist read state per user
   useEffect(() => {
