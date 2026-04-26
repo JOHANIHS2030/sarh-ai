@@ -151,6 +151,11 @@ export default function ExternalFormPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.departmentId || !form.nameEn || !form.nameAr || !form.nationalIdNo) return;
+    // Defense in depth: ensure the chosen department is actually allowed for this user
+    if (!currentExternalUser?.allowedDepartmentIds.includes(form.departmentId)) {
+      toast({ title: t('غير مصرح بهذا القسم', 'Department not allowed'), variant: 'destructive' });
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -161,7 +166,10 @@ export default function ExternalFormPage() {
         }))
       );
 
-      addRequest({ ...form, employeeType, attachments, createdBy: 'external' });
+      const createdByLabel = currentExternalUser
+        ? `external:${currentExternalUser.companyName} - ${currentExternalUser.representativeName}`
+        : 'external';
+      addRequest({ ...form, employeeType, attachments, createdBy: createdByLabel });
       setSubmitted(true);
     } finally {
       setSubmitting(false);
@@ -189,11 +197,17 @@ export default function ExternalFormPage() {
       <div className="absolute inset-0"><img src={bg} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0 bg-primary/60" /></div>
       
       <div className="relative z-10 max-w-4xl mx-auto py-8 px-4">
-        <button onClick={() => setLanguage(l => l === 'ar' ? 'en' : 'ar')}
-          className="absolute top-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-foreground/10 backdrop-blur-sm text-primary-foreground hover:bg-primary-foreground/20 transition-colors"
-          style={{ [language === 'ar' ? 'left' : 'right']: '1rem' }}>
-          <Globe className="w-4 h-4" /><span className="text-sm">{language === 'ar' ? 'English' : 'العربية'}</span>
-        </button>
+        <div className="flex justify-between items-center mb-4">
+          <button onClick={() => setLanguage(l => l === 'ar' ? 'en' : 'ar')}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-foreground/10 backdrop-blur-sm text-primary-foreground hover:bg-primary-foreground/20 transition-colors">
+            <Globe className="w-4 h-4" /><span className="text-sm">{language === 'ar' ? 'English' : 'العربية'}</span>
+          </button>
+          <button onClick={externalLogout}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/80 backdrop-blur-sm text-white hover:bg-destructive transition-colors text-sm font-medium">
+            <LogOut className="w-4 h-4" />
+            <span>{t('تسجيل الخروج', 'Sign Out')}</span>
+          </button>
+        </div>
 
         <div className="bg-card rounded-2xl shadow-elevated overflow-hidden">
           <div className="gradient-primary px-6 py-5 flex items-center justify-between">
@@ -203,7 +217,9 @@ export default function ExternalFormPage() {
               </div>
               <div>
                 <h1 className="text-lg font-bold text-primary-foreground">{t('طلب إصدار بطاقة هوية', 'ID Card Request Form')}</h1>
-                <p className="text-primary-foreground/70 text-sm">{t('شركة الفارابي ينبع للبتروكيماويات', 'Farabi Yanbu Petrochemicals')}</p>
+                <p className="text-primary-foreground/70 text-sm">
+                  {currentExternalUser.companyName} — {currentExternalUser.representativeName}
+                </p>
               </div>
             </div>
             <div className="text-end">
