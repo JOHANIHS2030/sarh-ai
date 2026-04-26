@@ -33,6 +33,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin },
     { to: '/builder', icon: Wand2, label: language === 'ar' ? 'منشئ النماذج والتقارير' : 'Forms & Reports Builder', show: isAdmin },
     { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin },
+    { to: '/settings/external-users', icon: ExternalLink, label: language === 'ar' ? 'مستخدمو الصفحات الخارجية' : 'External Users', show: isAdmin },
     { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin },
     { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin },
   ];
@@ -92,10 +93,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </button>
           <button
             onClick={logout}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-destructive/80 hover:bg-destructive/10 hover:text-destructive transition-colors w-full text-sm"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-white hover:bg-destructive/30 transition-colors w-full text-sm font-medium"
           >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            {sidebarOpen && <span>{t('logout')}</span>}
+            <LogOut className="w-5 h-5 flex-shrink-0 text-white" />
+            {sidebarOpen && <span className="text-white">{t('logout')}</span>}
           </button>
         </div>
       </aside>

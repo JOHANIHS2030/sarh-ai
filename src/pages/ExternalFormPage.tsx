@@ -2,12 +2,13 @@ import { useState, useMemo } from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useCompany } from '@/contexts/CompanyContext';
 import { useRequests } from '@/contexts/RequestContext';
+import { useExternalUsers } from '@/contexts/ExternalUsersContext';
 import { initialDepartments } from '@/data/departments';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Upload, Check, Shield, Globe } from 'lucide-react';
+import { Upload, Check, Shield, Globe, LogOut, Lock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { EmployeeType } from '@/types';
 import Barcode from 'react-barcode';
@@ -47,9 +48,14 @@ function fileToBase64(file: File): Promise<string> {
 export default function ExternalFormPage() {
   const { settings } = useCompany();
   const { addRequest, getNextRequestNumber } = useRequests();
+  const { currentExternalUser, externalLogin, externalLogout } = useExternalUsers();
   const [language, setLanguage] = useState<'ar' | 'en'>('ar');
   const t = (ar: string, en: string) => language === 'ar' ? ar : en;
   const bg = settings.loginBackground || defaultBg;
+
+  // Login state
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [loginError, setLoginError] = useState('');
 
   const requestNumber = useMemo(() => getNextRequestNumber(), []);
   const [employeeType, setEmployeeType] = useState<EmployeeType>('direct');
@@ -62,10 +68,80 @@ export default function ExternalFormPage() {
   });
   const [files, setFiles] = useState<Record<string, File | null>>({});
 
-  const departments = useMemo(() => {
+  const allDepartments = useMemo(() => {
     const saved = localStorage.getItem('farabi_departments');
     return saved ? JSON.parse(saved) : initialDepartments;
   }, []);
+
+  // Filter departments based on the logged-in external user's allowed list
+  const departments = useMemo(() => {
+    if (!currentExternalUser) return [];
+    return allDepartments.filter((d: any) => currentExternalUser.allowedDepartmentIds.includes(d.id));
+  }, [allDepartments, currentExternalUser]);
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    const ok = externalLogin(loginForm.username, loginForm.password);
+    if (!ok) {
+      setLoginError(t('اسم المستخدم أو كلمة المرور غير صحيحة، أو الحساب معطل', 'Invalid credentials or account disabled'));
+    }
+  };
+
+  // Login screen
+  if (!currentExternalUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center relative" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+        <div className="absolute inset-0">
+          <img src={bg} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-primary/70" />
+        </div>
+        <button onClick={() => setLanguage(l => l === 'ar' ? 'en' : 'ar')}
+          className="absolute top-4 right-4 z-20 flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-foreground/10 backdrop-blur-sm text-primary-foreground hover:bg-primary-foreground/20 transition-colors">
+          <Globe className="w-4 h-4" /><span className="text-sm">{language === 'ar' ? 'English' : 'العربية'}</span>
+        </button>
+        <div className="relative z-10 w-full max-w-md mx-4">
+          <div className="bg-card rounded-2xl shadow-elevated overflow-hidden">
+            <div className="gradient-primary px-6 py-6 text-center">
+              <div className="w-14 h-14 mx-auto rounded-xl bg-accent flex items-center justify-center mb-3">
+                <Lock className="w-7 h-7 text-accent-foreground" />
+              </div>
+              <h1 className="text-lg font-bold text-primary-foreground">
+                {t('دخول مندوبي الشركات', 'Contractor Representative Login')}
+              </h1>
+              <p className="text-primary-foreground/80 text-sm mt-1">
+                {t('النموذج الخارجي - شركة الفارابي ينبع', 'External Form - Farabi Yanbu')}
+              </p>
+            </div>
+            <form onSubmit={handleLogin} className="p-6 space-y-4">
+              <div>
+                <Label className="mb-1 block text-sm">{t('اسم المستخدم', 'Username')}</Label>
+                <Input value={loginForm.username} onChange={e => setLoginForm(p => ({ ...p, username: e.target.value }))} required className="h-11" autoFocus />
+              </div>
+              <div>
+                <Label className="mb-1 block text-sm">{t('كلمة المرور', 'Password')}</Label>
+                <Input type="password" value={loginForm.password} onChange={e => setLoginForm(p => ({ ...p, password: e.target.value }))} required className="h-11" />
+              </div>
+              {loginError && (
+                <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg p-3">
+                  {loginError}
+                </div>
+              )}
+              <Button type="submit" className="w-full h-11 gradient-primary text-primary-foreground font-semibold">
+                {t('دخول', 'Sign In')}
+              </Button>
+              <p className="text-[11px] text-center text-muted-foreground">
+                {t(
+                  'هذه الصفحة مقيدة. يرجى التواصل مع مدير النظام للحصول على بيانات الدخول.',
+                  'Restricted page. Contact the system administrator for credentials.'
+                )}
+              </p>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const requiredAttachments = useMemo(() => {
     const nat = isSaudi ? 'saudi' : 'nonSaudi';
@@ -75,6 +151,11 @@ export default function ExternalFormPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.departmentId || !form.nameEn || !form.nameAr || !form.nationalIdNo) return;
+    // Defense in depth: ensure the chosen department is actually allowed for this user
+    if (!currentExternalUser?.allowedDepartmentIds.includes(form.departmentId)) {
+      toast({ title: t('غير مصرح بهذا القسم', 'Department not allowed'), variant: 'destructive' });
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -85,7 +166,10 @@ export default function ExternalFormPage() {
         }))
       );
 
-      addRequest({ ...form, employeeType, attachments, createdBy: 'external' });
+      const createdByLabel = currentExternalUser
+        ? `external:${currentExternalUser.companyName} - ${currentExternalUser.representativeName}`
+        : 'external';
+      addRequest({ ...form, employeeType, attachments, createdBy: createdByLabel });
       setSubmitted(true);
     } finally {
       setSubmitting(false);
@@ -113,11 +197,17 @@ export default function ExternalFormPage() {
       <div className="absolute inset-0"><img src={bg} alt="" className="w-full h-full object-cover" /><div className="absolute inset-0 bg-primary/60" /></div>
       
       <div className="relative z-10 max-w-4xl mx-auto py-8 px-4">
-        <button onClick={() => setLanguage(l => l === 'ar' ? 'en' : 'ar')}
-          className="absolute top-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-foreground/10 backdrop-blur-sm text-primary-foreground hover:bg-primary-foreground/20 transition-colors"
-          style={{ [language === 'ar' ? 'left' : 'right']: '1rem' }}>
-          <Globe className="w-4 h-4" /><span className="text-sm">{language === 'ar' ? 'English' : 'العربية'}</span>
-        </button>
+        <div className="flex justify-between items-center mb-4">
+          <button onClick={() => setLanguage(l => l === 'ar' ? 'en' : 'ar')}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-foreground/10 backdrop-blur-sm text-primary-foreground hover:bg-primary-foreground/20 transition-colors">
+            <Globe className="w-4 h-4" /><span className="text-sm">{language === 'ar' ? 'English' : 'العربية'}</span>
+          </button>
+          <button onClick={externalLogout}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/80 backdrop-blur-sm text-white hover:bg-destructive transition-colors text-sm font-medium">
+            <LogOut className="w-4 h-4" />
+            <span>{t('تسجيل الخروج', 'Sign Out')}</span>
+          </button>
+        </div>
 
         <div className="bg-card rounded-2xl shadow-elevated overflow-hidden">
           <div className="gradient-primary px-6 py-5 flex items-center justify-between">
@@ -127,7 +217,9 @@ export default function ExternalFormPage() {
               </div>
               <div>
                 <h1 className="text-lg font-bold text-primary-foreground">{t('طلب إصدار بطاقة هوية', 'ID Card Request Form')}</h1>
-                <p className="text-primary-foreground/70 text-sm">{t('شركة الفارابي ينبع للبتروكيماويات', 'Farabi Yanbu Petrochemicals')}</p>
+                <p className="text-primary-foreground/70 text-sm">
+                  {currentExternalUser.companyName} — {currentExternalUser.representativeName}
+                </p>
               </div>
             </div>
             <div className="text-end">
