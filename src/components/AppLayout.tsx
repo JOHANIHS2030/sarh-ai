@@ -75,18 +75,32 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
 
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {navItems.filter(n => n.show).map(item => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.to === '/'}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors text-sm"
-              activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span className="truncate">{item.label}</span>}
-            </NavLink>
-          ))}
+          {sectionsOrder.map(section => {
+            const items = navItems.filter(n => n.show && n.section === section);
+            if (items.length === 0) return null;
+            const label = sectionLabels[section];
+            return (
+              <div key={section} className="mb-2">
+                {sidebarOpen && label.ar && (
+                  <p className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 px-3 pt-2 pb-1">
+                    {language === 'ar' ? label.ar : label.en}
+                  </p>
+                )}
+                {items.map(item => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.to === '/'}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors text-sm"
+                    activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
+                  >
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    {sidebarOpen && <span className="truncate">{item.label}</span>}
+                  </NavLink>
+                ))}
+              </div>
+            );
+          })}
         </nav>
 
         <div className="p-3 border-t border-sidebar-border space-y-2">
