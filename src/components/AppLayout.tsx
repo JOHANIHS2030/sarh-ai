@@ -33,6 +33,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin },
     { to: '/builder', icon: Wand2, label: language === 'ar' ? 'منشئ النماذج والتقارير' : 'Forms & Reports Builder', show: isAdmin },
     { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin },
+    { to: '/settings/external-users', icon: ExternalLink, label: language === 'ar' ? 'مستخدمو الصفحات الخارجية' : 'External Users', show: isAdmin },
     { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin },
     { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin },
   ];

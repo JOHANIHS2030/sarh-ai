@@ -6,6 +6,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { RequestProvider } from "@/contexts/RequestContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
+import { ExternalUsersProvider } from "@/contexts/ExternalUsersContext";
 import CompanySettingsPage from "@/pages/CompanySettingsPage";
 import LoginPage from "@/pages/LoginPage";
 import AppLayout from "@/components/AppLayout";
@@ -18,6 +19,7 @@ import RequestDetailsPage from "@/pages/RequestDetailsPage";
 import UsersSettingsPage from "@/pages/UsersSettingsPage";
 import DepartmentsSettingsPage from "@/pages/DepartmentsSettingsPage";
 import ExternalFormPage from "@/pages/ExternalFormPage";
+import ExternalUsersSettingsPage from "@/pages/ExternalUsersSettingsPage";
 import AuditLogPage from "@/pages/AuditLogPage";
 import WorkflowPage from "@/pages/WorkflowPage";
 import FormBuilderPage from "@/pages/FormBuilderPage";
@@ -40,6 +42,7 @@ function AuthenticatedApp() {
         <Route path="/all-requests" element={<AllRequestsPage />} />
         <Route path="/request/:id" element={<RequestDetailsPage />} />
         <Route path="/settings/users" element={<UsersSettingsPage />} />
+        <Route path="/settings/external-users" element={<ExternalUsersSettingsPage />} />
         <Route path="/settings/departments" element={<DepartmentsSettingsPage />} />
         <Route path="/audit-log" element={<AuditLogPage />} />
         <Route path="/workflow" element={<WorkflowPage />} />
@@ -58,14 +61,16 @@ const App = () => (
       <LanguageProvider>
         <AuthProvider>
           <CompanyProvider>
-            <RequestProvider>
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/external-form" element={<ExternalFormPage />} />
-                  <Route path="/*" element={<AuthenticatedApp />} />
-                </Routes>
-              </BrowserRouter>
-            </RequestProvider>
+            <ExternalUsersProvider>
+              <RequestProvider>
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/external-form" element={<ExternalFormPage />} />
+                    <Route path="/*" element={<AuthenticatedApp />} />
+                  </Routes>
+                </BrowserRouter>
+              </RequestProvider>
+            </ExternalUsersProvider>
           </CompanyProvider>
         </AuthProvider>
       </LanguageProvider>
