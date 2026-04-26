@@ -23,20 +23,36 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isSafety = currentUser?.systemRole === 'safety_orientation' || currentUser?.systemRole === 'ehss_manager';
   const isDeptManager = currentUser?.systemRole === 'dept_manager' || currentUser?.systemRole === 'hr_manager';
 
-  const navItems = [
-    { to: '/', icon: LayoutDashboard, label: t('dashboard'), show: true },
-    { to: '/new-request', icon: FilePlus, label: t('newRequest'), show: true },
-    { to: '/my-requests', icon: FileText, label: t('myRequests'), show: true },
-    { to: '/pending-approvals', icon: CheckSquare, label: t('pendingApprovals'), show: isDeptManager || isSafety || isIdCardTeam || isAdmin },
-    { to: '/all-requests', icon: FileText, label: t('allRequests'), show: isAdmin || isIdCardTeam },
-    { to: '/workflow', icon: GitBranch, label: language === 'ar' ? 'سير العمل' : 'Workflow', show: true },
-    { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin },
-    { to: '/builder', icon: Wand2, label: language === 'ar' ? 'منشئ النماذج والتقارير' : 'Forms & Reports Builder', show: isAdmin },
-    { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin },
-    { to: '/settings/external-users', icon: ExternalLink, label: language === 'ar' ? 'مستخدمو الصفحات الخارجية' : 'External Users', show: isAdmin },
-    { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin },
-    { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin },
+  const navItems: { to: string; icon: typeof LayoutDashboard; label: string; show: boolean; section: string }[] = [
+    { to: '/', icon: LayoutDashboard, label: t('dashboard'), show: true, section: 'main' },
+
+    { to: '/new-request', icon: FilePlus, label: t('newRequest'), show: true, section: 'idcards' },
+    { to: '/my-requests', icon: FileText, label: t('myRequests'), show: true, section: 'idcards' },
+    { to: '/pending-approvals', icon: CheckSquare, label: t('pendingApprovals'), show: isDeptManager || isSafety || isIdCardTeam || isAdmin, section: 'idcards' },
+    { to: '/all-requests', icon: FileText, label: t('allRequests'), show: isAdmin || isIdCardTeam, section: 'idcards' },
+
+    { to: '/stickers/new', icon: FilePlus, label: language === 'ar' ? 'طلب ملصق جديد' : 'New Sticker', show: true, section: 'stickers' },
+    { to: '/stickers/my', icon: Car, label: language === 'ar' ? 'ملصقاتي' : 'My Stickers', show: true, section: 'stickers' },
+    { to: '/stickers/pending', icon: CheckSquare, label: language === 'ar' ? 'موافقات الملصقات' : 'Sticker Approvals', show: isDeptManager || isIdCardTeam || isAdmin, section: 'stickers' },
+    { to: '/stickers/all', icon: FileText, label: language === 'ar' ? 'جميع الملصقات' : 'All Stickers', show: isAdmin || isIdCardTeam, section: 'stickers' },
+
+    { to: '/workflow', icon: GitBranch, label: language === 'ar' ? 'سير العمل' : 'Workflow', show: true, section: 'admin' },
+    { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin, section: 'admin' },
+    { to: '/builder', icon: Wand2, label: language === 'ar' ? 'منشئ النماذج والتقارير' : 'Forms & Reports Builder', show: isAdmin, section: 'admin' },
+    { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin, section: 'admin' },
+    { to: '/settings/external-users', icon: ExternalLink, label: language === 'ar' ? 'مستخدمو الصفحات الخارجية' : 'External Users', show: isAdmin, section: 'admin' },
+    { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin, section: 'admin' },
+    { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin, section: 'admin' },
   ];
+
+  const sectionLabels: Record<string, { ar: string; en: string }> = {
+    main: { ar: '', en: '' },
+    idcards: { ar: 'بطاقات الهوية', en: 'ID Cards' },
+    stickers: { ar: 'ملصقات المركبات', en: 'Vehicle Stickers' },
+    admin: { ar: 'الإدارة', en: 'Administration' },
+  };
+
+  const sectionsOrder = ['main', 'idcards', 'stickers', 'admin'];
 
   const externalUrl = `${window.location.origin}/external-form`;
 
