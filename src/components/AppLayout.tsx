@@ -120,29 +120,60 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
 
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {sectionsOrder.map(section => {
-            const items = navItems.filter(n => n.show && n.section === section);
-            if (items.length === 0) return null;
-            const label = sectionLabels[section];
+          {/* Dashboard (always at the top, no group) */}
+          <NavLink
+            to="/"
+            end
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors text-sm mb-2"
+            activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
+          >
+            <LayoutDashboard className="w-5 h-5 flex-shrink-0" />
+            {sidebarOpen && <span className="truncate">{t('dashboard')}</span>}
+          </NavLink>
+
+          {groups.filter(g => g.show).map(group => {
+            const isOpen = openGroups[group.id];
+            const GroupIcon = group.icon;
+            const hasActive = group.items.some(i => location.pathname.startsWith(i.to));
             return (
-              <div key={section} className="mb-2">
-                {sidebarOpen && label.ar && (
-                  <p className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 px-3 pt-2 pb-1">
-                    {language === 'ar' ? label.ar : label.en}
-                  </p>
+              <div key={group.id} className="mb-1">
+                <button
+                  type="button"
+                  onClick={() => sidebarOpen ? toggleGroup(group.id) : setSidebarOpen(true)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm ${
+                    hasActive
+                      ? 'bg-sidebar-accent/60 text-sidebar-foreground font-semibold'
+                      : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                  }`}
+                  aria-expanded={isOpen}
+                >
+                  <GroupIcon className="w-5 h-5 flex-shrink-0" />
+                  {sidebarOpen && (
+                    <>
+                      <span className="truncate flex-1 text-start">
+                        {language === 'ar' ? group.labelAr : group.labelEn}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                      />
+                    </>
+                  )}
+                </button>
+                {sidebarOpen && isOpen && (
+                  <div className="mt-1 ms-3 ps-3 border-s border-sidebar-border/40 space-y-0.5">
+                    {group.items.map(item => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors text-sm"
+                        activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
+                      >
+                        <item.icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                      </NavLink>
+                    ))}
+                  </div>
                 )}
-                {items.map(item => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.to === '/'}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors text-sm"
-                    activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
-                  >
-                    <item.icon className="w-5 h-5 flex-shrink-0" />
-                    {sidebarOpen && <span className="truncate">{item.label}</span>}
-                  </NavLink>
-                ))}
               </div>
             );
           })}
