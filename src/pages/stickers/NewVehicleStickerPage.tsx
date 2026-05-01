@@ -24,7 +24,7 @@ interface AttachmentDef {
 }
 
 const employeeAttachments: AttachmentDef[] = [
-  { key: 'iqama', labelAr: 'صورة بطاقة الإقامة', labelEn: 'Iqama Copy', required: true },
+  { key: 'iqama', labelAr: 'صورة بطاقة الهوية الوطنية / الإقامة', labelEn: 'National ID / Iqama Copy', required: true },
   { key: 'driverLicense', labelAr: 'صورة رخصة السياقة', labelEn: 'Driver License', required: true },
   { key: 'vehicleRegistration', labelAr: 'صورة رخصة السير', labelEn: 'Vehicle Registration', required: true },
   {
@@ -40,7 +40,7 @@ const employeeAttachments: AttachmentDef[] = [
 ];
 
 const contractorAttachments: AttachmentDef[] = [
-  { key: 'iqama', labelAr: 'صورة بطاقة الإقامة', labelEn: 'Iqama Copy', required: true },
+  { key: 'iqama', labelAr: 'صورة بطاقة الهوية الوطنية / الإقامة', labelEn: 'National ID / Iqama Copy', required: true },
   { key: 'driverLicense', labelAr: 'صورة رخصة السياقة', labelEn: 'Driver License', required: true },
   { key: 'vehicleRegistration', labelAr: 'صورة رخصة السير', labelEn: 'Vehicle Registration', required: true },
   {

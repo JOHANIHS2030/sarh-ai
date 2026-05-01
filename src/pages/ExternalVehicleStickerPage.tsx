@@ -293,7 +293,7 @@ export default function ExternalVehicleStickerPage() {
               <Label className="text-sm font-semibold mb-2 block">{t('المرفقات', 'Attachments')}</Label>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { key: 'iqama', ar: 'صورة الإقامة *', en: 'Iqama *' },
+                  { key: 'iqama', ar: 'صورة بطاقة الهوية الوطنية / الإقامة *', en: 'National ID / Iqama *' },
                   { key: 'driverLicense', ar: 'رخصة السياقة *', en: 'Driver License *' },
                   { key: 'vehicleRegistration', ar: 'رخصة السير *', en: 'Vehicle Registration *' },
                   { key: 'periodicInspection', ar: 'الفحص الدوري *', en: 'Periodic Inspection *' },
