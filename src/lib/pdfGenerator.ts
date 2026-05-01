@@ -44,6 +44,24 @@ async function renderHtmlToPdf(html: string, fileName: string) {
   container.innerHTML = html;
   document.body.appendChild(container);
 
+  // Preload Arabic & Latin fonts at the weights we use, then wait for them to be ready.
+  // This prevents html2canvas from snapshotting the page before Cairo has loaded —
+  // which is the usual cause of Arabic letters rendering disconnected/garbled.
+  try {
+    const fontsToLoad = [
+      '400 14px "Cairo"',
+      '600 14px "Cairo"',
+      '700 14px "Cairo"',
+      '400 14px "Inter"',
+      '600 14px "Inter"',
+      '700 14px "Inter"',
+    ];
+    await Promise.all(fontsToLoad.map(f => (document as any).fonts.load(f, 'النموذج Form')));
+    await (document as any).fonts.ready;
+  } catch {
+    // ignore — fall back to system fonts
+  }
+
   // Wait for images to load
   const imgs = Array.from(container.querySelectorAll('img'));
   await Promise.all(

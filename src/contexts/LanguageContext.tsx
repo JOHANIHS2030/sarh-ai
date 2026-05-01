@@ -6,7 +6,7 @@ interface Translations {
 }
 
 const translations: Translations = {
-  appTitle: { ar: 'نظام بطاقات الهوية', en: 'ID Card System' },
+  appTitle: { ar: 'نظام قسم بطاقات الهوية', en: 'FYPC ID Section System' },
   appSubtitle: { ar: 'شركة الفارابي ينبع للبتروكيماويات', en: 'Farabi Yanbu Petrochemicals' },
   login: { ar: 'تسجيل الدخول', en: 'Login' },
   username: { ar: 'اسم المستخدم', en: 'Username' },
@@ -80,7 +80,7 @@ const translations: Translations = {
   att_medical: { ar: 'التقرير الطبي', en: 'Medical Report' },
   att_nationalId: { ar: 'صورة الهوية الوطنية', en: 'National ID Copy' },
   att_passport: { ar: 'صورة جواز السفر', en: 'Passport Copy' },
-  att_iqama: { ar: 'صورة الإقامة', en: 'Iqama Copy' },
+  att_iqama: { ar: 'صورة بطاقة الهوية الوطنية / الإقامة', en: 'National ID / Iqama Copy' },
   att_photo: { ar: 'صورة فوتوغرافية حديثة', en: 'Recent Photo' },
   att_purchaseOrder: { ar: 'أمر الشراء', en: 'Purchase Order' },
   // User mgmt

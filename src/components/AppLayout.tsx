@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { NavLink } from '@/components/NavLink';
 import {
   LayoutDashboard, FilePlus, FileText, CheckSquare, LogOut, Globe, Shield,
-  ChevronLeft, ChevronRight, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car
+  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationsBell from '@/components/NotificationsBell';
@@ -17,42 +18,86 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { currentUser, logout } = useAuth();
   const { t, toggleLanguage, language } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const location = useLocation();
 
   const isAdmin = currentUser?.role === 'admin';
   const isIdCardTeam = currentUser?.systemRole === 'id_card_executor' || currentUser?.systemRole === 'security_chief';
   const isSafety = currentUser?.systemRole === 'safety_orientation' || currentUser?.systemRole === 'ehss_manager';
   const isDeptManager = currentUser?.systemRole === 'dept_manager' || currentUser?.systemRole === 'hr_manager';
 
-  const navItems: { to: string; icon: typeof LayoutDashboard; label: string; show: boolean; section: string }[] = [
-    { to: '/', icon: LayoutDashboard, label: t('dashboard'), show: true, section: 'main' },
+  type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; show: boolean };
+  type NavGroup = { id: string; icon: typeof LayoutDashboard; labelAr: string; labelEn: string; items: NavItem[]; show: boolean };
 
-    { to: '/new-request', icon: FilePlus, label: t('newRequest'), show: true, section: 'idcards' },
-    { to: '/my-requests', icon: FileText, label: t('myRequests'), show: true, section: 'idcards' },
-    { to: '/pending-approvals', icon: CheckSquare, label: t('pendingApprovals'), show: isDeptManager || isSafety || isIdCardTeam || isAdmin, section: 'idcards' },
-    { to: '/all-requests', icon: FileText, label: t('allRequests'), show: isAdmin || isIdCardTeam, section: 'idcards' },
-
-    { to: '/stickers/new', icon: FilePlus, label: language === 'ar' ? 'طلب ملصق جديد' : 'New Sticker', show: true, section: 'stickers' },
-    { to: '/stickers/my', icon: Car, label: language === 'ar' ? 'ملصقاتي' : 'My Stickers', show: true, section: 'stickers' },
-    { to: '/stickers/pending', icon: CheckSquare, label: language === 'ar' ? 'موافقات الملصقات' : 'Sticker Approvals', show: isDeptManager || isIdCardTeam || isAdmin, section: 'stickers' },
-    { to: '/stickers/all', icon: FileText, label: language === 'ar' ? 'جميع الملصقات' : 'All Stickers', show: isAdmin || isIdCardTeam, section: 'stickers' },
-
-    { to: '/workflow', icon: GitBranch, label: language === 'ar' ? 'سير العمل' : 'Workflow', show: true, section: 'admin' },
-    { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin, section: 'admin' },
-    { to: '/builder', icon: Wand2, label: language === 'ar' ? 'منشئ النماذج والتقارير' : 'Forms & Reports Builder', show: isAdmin, section: 'admin' },
-    { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin, section: 'admin' },
-    { to: '/settings/external-users', icon: ExternalLink, label: language === 'ar' ? 'مستخدمو الصفحات الخارجية' : 'External Users', show: isAdmin, section: 'admin' },
-    { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin, section: 'admin' },
-    { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin, section: 'admin' },
+  const idCardItems: NavItem[] = [
+    { to: '/new-request', icon: FilePlus, label: t('newRequest'), show: true },
+    { to: '/my-requests', icon: FileText, label: t('myRequests'), show: true },
+    { to: '/pending-approvals', icon: CheckSquare, label: t('pendingApprovals'), show: isDeptManager || isSafety || isIdCardTeam || isAdmin },
+    { to: '/all-requests', icon: FileText, label: t('allRequests'), show: isAdmin || isIdCardTeam },
   ];
 
-  const sectionLabels: Record<string, { ar: string; en: string }> = {
-    main: { ar: '', en: '' },
-    idcards: { ar: 'بطاقات الهوية', en: 'ID Cards' },
-    stickers: { ar: 'ملصقات المركبات', en: 'Vehicle Stickers' },
-    admin: { ar: 'الإدارة', en: 'Administration' },
-  };
+  const stickerItems: NavItem[] = [
+    { to: '/stickers/new', icon: FilePlus, label: language === 'ar' ? 'طلب ملصق جديد' : 'New Sticker', show: true },
+    { to: '/stickers/my', icon: Car, label: language === 'ar' ? 'ملصقاتي' : 'My Stickers', show: true },
+    { to: '/stickers/pending', icon: CheckSquare, label: language === 'ar' ? 'موافقات الملصقات' : 'Sticker Approvals', show: isDeptManager || isIdCardTeam || isAdmin },
+    { to: '/stickers/all', icon: FileText, label: language === 'ar' ? 'جميع الملصقات' : 'All Stickers', show: isAdmin || isIdCardTeam },
+  ];
 
-  const sectionsOrder = ['main', 'idcards', 'stickers', 'admin'];
+  const adminItems: NavItem[] = [
+    { to: '/workflow', icon: GitBranch, label: language === 'ar' ? 'سير العمل' : 'Workflow', show: true },
+    { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin },
+    { to: '/builder', icon: Wand2, label: language === 'ar' ? 'منشئ النماذج والتقارير' : 'Forms & Reports Builder', show: isAdmin },
+    { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin },
+    { to: '/settings/external-users', icon: ExternalLink, label: language === 'ar' ? 'مستخدمو الصفحات الخارجية' : 'External Users', show: isAdmin },
+    { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin },
+    { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin },
+  ];
+
+  const groups: NavGroup[] = [
+    {
+      id: 'idcards',
+      icon: IdCard,
+      labelAr: 'نظام قسم بطاقات الهوية',
+      labelEn: 'ID Card Section System',
+      items: idCardItems.filter(i => i.show),
+      show: idCardItems.some(i => i.show),
+    },
+    {
+      id: 'stickers',
+      icon: Car,
+      labelAr: 'نظام ملصقات المركبات',
+      labelEn: 'Vehicle Stickers System',
+      items: stickerItems.filter(i => i.show),
+      show: stickerItems.some(i => i.show),
+    },
+    {
+      id: 'admin',
+      icon: Wrench,
+      labelAr: 'الإدارة',
+      labelEn: 'Administration',
+      items: adminItems.filter(i => i.show),
+      show: adminItems.some(i => i.show),
+    },
+  ];
+
+  // Auto-open the group that contains the active route
+  const activeGroupId =
+    groups.find(g => g.items.some(i => location.pathname.startsWith(i.to) && i.to !== '/'))?.id || null;
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    groups.forEach(g => { initial[g.id] = g.id === activeGroupId; });
+    return initial;
+  });
+
+  // Keep active group open when route changes
+  if (activeGroupId && !openGroups[activeGroupId]) {
+    // Defer state update to avoid render loop
+    setTimeout(() => setOpenGroups(p => ({ ...p, [activeGroupId]: true })), 0);
+  }
+
+  const toggleGroup = (id: string) => {
+    setOpenGroups(p => ({ ...p, [id]: !p[id] }));
+  };
 
   const externalUrl = `${window.location.origin}/external-form`;
 
@@ -75,29 +120,60 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
 
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {sectionsOrder.map(section => {
-            const items = navItems.filter(n => n.show && n.section === section);
-            if (items.length === 0) return null;
-            const label = sectionLabels[section];
+          {/* Dashboard (always at the top, no group) */}
+          <NavLink
+            to="/"
+            end
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors text-sm mb-2"
+            activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
+          >
+            <LayoutDashboard className="w-5 h-5 flex-shrink-0" />
+            {sidebarOpen && <span className="truncate">{t('dashboard')}</span>}
+          </NavLink>
+
+          {groups.filter(g => g.show).map(group => {
+            const isOpen = openGroups[group.id];
+            const GroupIcon = group.icon;
+            const hasActive = group.items.some(i => location.pathname.startsWith(i.to));
             return (
-              <div key={section} className="mb-2">
-                {sidebarOpen && label.ar && (
-                  <p className="text-[10px] uppercase tracking-wider text-sidebar-foreground/40 px-3 pt-2 pb-1">
-                    {language === 'ar' ? label.ar : label.en}
-                  </p>
+              <div key={group.id} className="mb-1">
+                <button
+                  type="button"
+                  onClick={() => sidebarOpen ? toggleGroup(group.id) : setSidebarOpen(true)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm ${
+                    hasActive
+                      ? 'bg-sidebar-accent/60 text-sidebar-foreground font-semibold'
+                      : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                  }`}
+                  aria-expanded={isOpen}
+                >
+                  <GroupIcon className="w-5 h-5 flex-shrink-0" />
+                  {sidebarOpen && (
+                    <>
+                      <span className="truncate flex-1 text-start">
+                        {language === 'ar' ? group.labelAr : group.labelEn}
+                      </span>
+                      <ChevronDown
+                        className={`w-4 h-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                      />
+                    </>
+                  )}
+                </button>
+                {sidebarOpen && isOpen && (
+                  <div className="mt-1 ms-3 ps-3 border-s border-sidebar-border/40 space-y-0.5">
+                    {group.items.map(item => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors text-sm"
+                        activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
+                      >
+                        <item.icon className="w-4 h-4 flex-shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                      </NavLink>
+                    ))}
+                  </div>
                 )}
-                {items.map(item => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    end={item.to === '/'}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors text-sm"
-                    activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
-                  >
-                    <item.icon className="w-5 h-5 flex-shrink-0" />
-                    {sidebarOpen && <span className="truncate">{item.label}</span>}
-                  </NavLink>
-                ))}
               </div>
             );
           })}
