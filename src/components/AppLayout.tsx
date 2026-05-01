@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { NavLink } from '@/components/NavLink';
 import {
   LayoutDashboard, FilePlus, FileText, CheckSquare, LogOut, Globe, Shield,
-  ChevronLeft, ChevronRight, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car
+  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationsBell from '@/components/NotificationsBell';
@@ -17,42 +18,86 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { currentUser, logout } = useAuth();
   const { t, toggleLanguage, language } = useLanguage();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const location = useLocation();
 
   const isAdmin = currentUser?.role === 'admin';
   const isIdCardTeam = currentUser?.systemRole === 'id_card_executor' || currentUser?.systemRole === 'security_chief';
   const isSafety = currentUser?.systemRole === 'safety_orientation' || currentUser?.systemRole === 'ehss_manager';
   const isDeptManager = currentUser?.systemRole === 'dept_manager' || currentUser?.systemRole === 'hr_manager';
 
-  const navItems: { to: string; icon: typeof LayoutDashboard; label: string; show: boolean; section: string }[] = [
-    { to: '/', icon: LayoutDashboard, label: t('dashboard'), show: true, section: 'main' },
+  type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; show: boolean };
+  type NavGroup = { id: string; icon: typeof LayoutDashboard; labelAr: string; labelEn: string; items: NavItem[]; show: boolean };
 
-    { to: '/new-request', icon: FilePlus, label: t('newRequest'), show: true, section: 'idcards' },
-    { to: '/my-requests', icon: FileText, label: t('myRequests'), show: true, section: 'idcards' },
-    { to: '/pending-approvals', icon: CheckSquare, label: t('pendingApprovals'), show: isDeptManager || isSafety || isIdCardTeam || isAdmin, section: 'idcards' },
-    { to: '/all-requests', icon: FileText, label: t('allRequests'), show: isAdmin || isIdCardTeam, section: 'idcards' },
-
-    { to: '/stickers/new', icon: FilePlus, label: language === 'ar' ? 'طلب ملصق جديد' : 'New Sticker', show: true, section: 'stickers' },
-    { to: '/stickers/my', icon: Car, label: language === 'ar' ? 'ملصقاتي' : 'My Stickers', show: true, section: 'stickers' },
-    { to: '/stickers/pending', icon: CheckSquare, label: language === 'ar' ? 'موافقات الملصقات' : 'Sticker Approvals', show: isDeptManager || isIdCardTeam || isAdmin, section: 'stickers' },
-    { to: '/stickers/all', icon: FileText, label: language === 'ar' ? 'جميع الملصقات' : 'All Stickers', show: isAdmin || isIdCardTeam, section: 'stickers' },
-
-    { to: '/workflow', icon: GitBranch, label: language === 'ar' ? 'سير العمل' : 'Workflow', show: true, section: 'admin' },
-    { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin, section: 'admin' },
-    { to: '/builder', icon: Wand2, label: language === 'ar' ? 'منشئ النماذج والتقارير' : 'Forms & Reports Builder', show: isAdmin, section: 'admin' },
-    { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin, section: 'admin' },
-    { to: '/settings/external-users', icon: ExternalLink, label: language === 'ar' ? 'مستخدمو الصفحات الخارجية' : 'External Users', show: isAdmin, section: 'admin' },
-    { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin, section: 'admin' },
-    { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin, section: 'admin' },
+  const idCardItems: NavItem[] = [
+    { to: '/new-request', icon: FilePlus, label: t('newRequest'), show: true },
+    { to: '/my-requests', icon: FileText, label: t('myRequests'), show: true },
+    { to: '/pending-approvals', icon: CheckSquare, label: t('pendingApprovals'), show: isDeptManager || isSafety || isIdCardTeam || isAdmin },
+    { to: '/all-requests', icon: FileText, label: t('allRequests'), show: isAdmin || isIdCardTeam },
   ];
 
-  const sectionLabels: Record<string, { ar: string; en: string }> = {
-    main: { ar: '', en: '' },
-    idcards: { ar: 'بطاقات الهوية', en: 'ID Cards' },
-    stickers: { ar: 'ملصقات المركبات', en: 'Vehicle Stickers' },
-    admin: { ar: 'الإدارة', en: 'Administration' },
-  };
+  const stickerItems: NavItem[] = [
+    { to: '/stickers/new', icon: FilePlus, label: language === 'ar' ? 'طلب ملصق جديد' : 'New Sticker', show: true },
+    { to: '/stickers/my', icon: Car, label: language === 'ar' ? 'ملصقاتي' : 'My Stickers', show: true },
+    { to: '/stickers/pending', icon: CheckSquare, label: language === 'ar' ? 'موافقات الملصقات' : 'Sticker Approvals', show: isDeptManager || isIdCardTeam || isAdmin },
+    { to: '/stickers/all', icon: FileText, label: language === 'ar' ? 'جميع الملصقات' : 'All Stickers', show: isAdmin || isIdCardTeam },
+  ];
 
-  const sectionsOrder = ['main', 'idcards', 'stickers', 'admin'];
+  const adminItems: NavItem[] = [
+    { to: '/workflow', icon: GitBranch, label: language === 'ar' ? 'سير العمل' : 'Workflow', show: true },
+    { to: '/audit-log', icon: Activity, label: language === 'ar' ? 'سجل العمليات' : 'Audit Log', show: isAdmin },
+    { to: '/builder', icon: Wand2, label: language === 'ar' ? 'منشئ النماذج والتقارير' : 'Forms & Reports Builder', show: isAdmin },
+    { to: '/settings/users', icon: Users, label: t('users'), show: isAdmin },
+    { to: '/settings/external-users', icon: ExternalLink, label: language === 'ar' ? 'مستخدمو الصفحات الخارجية' : 'External Users', show: isAdmin },
+    { to: '/settings/departments', icon: Building2, label: t('departments'), show: isAdmin },
+    { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin },
+  ];
+
+  const groups: NavGroup[] = [
+    {
+      id: 'idcards',
+      icon: IdCard,
+      labelAr: 'نظام قسم بطاقات الهوية',
+      labelEn: 'ID Card Section System',
+      items: idCardItems.filter(i => i.show),
+      show: idCardItems.some(i => i.show),
+    },
+    {
+      id: 'stickers',
+      icon: Car,
+      labelAr: 'نظام ملصقات المركبات',
+      labelEn: 'Vehicle Stickers System',
+      items: stickerItems.filter(i => i.show),
+      show: stickerItems.some(i => i.show),
+    },
+    {
+      id: 'admin',
+      icon: Wrench,
+      labelAr: 'الإدارة',
+      labelEn: 'Administration',
+      items: adminItems.filter(i => i.show),
+      show: adminItems.some(i => i.show),
+    },
+  ];
+
+  // Auto-open the group that contains the active route
+  const activeGroupId =
+    groups.find(g => g.items.some(i => location.pathname.startsWith(i.to) && i.to !== '/'))?.id || null;
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    groups.forEach(g => { initial[g.id] = g.id === activeGroupId; });
+    return initial;
+  });
+
+  // Keep active group open when route changes
+  if (activeGroupId && !openGroups[activeGroupId]) {
+    // Defer state update to avoid render loop
+    setTimeout(() => setOpenGroups(p => ({ ...p, [activeGroupId]: true })), 0);
+  }
+
+  const toggleGroup = (id: string) => {
+    setOpenGroups(p => ({ ...p, [id]: !p[id] }));
+  };
 
   const externalUrl = `${window.location.origin}/external-form`;
 
