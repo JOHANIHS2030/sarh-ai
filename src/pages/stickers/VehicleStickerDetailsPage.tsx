@@ -17,6 +17,8 @@ import { Department } from '@/types';
 import { initialDepartments } from '@/data/departments';
 import { readLocalJSON } from '@/lib/browserStorage';
 import { StickerSecurityIssuance, StickerDepartmentApproval } from '@/types/vehicleSticker';
+import { generateStickerPDF } from '@/lib/stickerPdfGenerator';
+import { useCompany } from '@/contexts/CompanyContext';
 
 export default function VehicleStickerDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +26,7 @@ export default function VehicleStickerDetailsPage() {
   const { language } = useLanguage();
   const { currentUser, getUserById } = useAuth();
   const { getStickerById, updateStickerStatus, setSecurityIssuance } = useVehicleStickers();
+  const { settings: companySettings } = useCompany();
   const t = (ar: string, en: string) => (language === 'ar' ? ar : en);
 
   const sticker = id ? getStickerById(id) : undefined;
