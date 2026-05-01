@@ -147,6 +147,27 @@ export default function VehicleStickerDetailsPage() {
     toast({ title: t('تم إصدار الملصق بنجاح', 'Sticker issued successfully') });
   };
 
+  const handlePrint = async () => {
+    const dept = departments.find(d => d.id === sticker.departmentId);
+    const creator = sticker.createdBy.startsWith('external:') ? undefined : getUserById(sticker.createdBy);
+    const approverUser = sticker.departmentApproval ? getUserById(sticker.departmentApproval.approverUserId) : undefined;
+    const reviewerUser = sticker.securityIssuance ? getUserById(sticker.securityIssuance.reviewerUserId) : undefined;
+    try {
+      await generateStickerPDF({
+        sticker,
+        department: dept,
+        creator,
+        approverUser,
+        reviewerUser,
+        company: companySettings,
+        language,
+        statusLabel: statusLabel(sticker.status, language),
+      });
+    } catch (e) {
+      toast({ title: t('فشل توليد ملف PDF', 'Failed to generate PDF'), variant: 'destructive' });
+    }
+  };
+
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -154,14 +175,22 @@ export default function VehicleStickerDetailsPage() {
           <ArrowLeft className="w-4 h-4" />
           {t('رجوع', 'Back')}
         </button>
-        <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-          sticker.status === 'approved' ? 'bg-success/15 text-success' :
-          sticker.status === 'rejected' ? 'bg-destructive/15 text-destructive' :
-          sticker.status === 'on_hold' ? 'bg-muted text-muted-foreground' :
-          'bg-warning/15 text-warning'
-        }`}>
-          {statusLabel(sticker.status, language)}
-        </span>
+        <div className="flex items-center gap-2">
+          {sticker.status === 'approved' && (
+            <Button onClick={handlePrint} variant="outline" size="sm" className="gap-2">
+              <Download className="w-4 h-4" />
+              {t('طباعة النموذج النهائي', 'Print Final Form')}
+            </Button>
+          )}
+          <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+            sticker.status === 'approved' ? 'bg-success/15 text-success' :
+            sticker.status === 'rejected' ? 'bg-destructive/15 text-destructive' :
+            sticker.status === 'on_hold' ? 'bg-muted text-muted-foreground' :
+            'bg-warning/15 text-warning'
+          }`}>
+            {statusLabel(sticker.status, language)}
+          </span>
+        </div>
       </div>
 
       {/* Header */}
