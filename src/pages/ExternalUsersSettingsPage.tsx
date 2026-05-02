@@ -235,6 +235,37 @@ export default function ExternalUsersSettingsPage() {
               </div>
             </div>
 
+            <div>
+              <Label className="mb-2 block">
+                {t('أنواع التصاريح المسموح تقديمها', 'Allowed Permit Types')}
+              </Label>
+              <div className="grid grid-cols-1 gap-2 p-3 border border-border rounded-lg">
+                {([
+                  { v: 'mobile_phone', ar: 'تصريح إدخال الجوال', en: 'Mobile Phone Permit' },
+                  { v: 'laptop', ar: 'تصريح إدخال الكمبيوتر المحمول', en: 'Laptop Permit' },
+                  { v: 'photography', ar: 'تصريح التصوير الفوتوغرافي', en: 'Photography Permit' },
+                ] as const).map(p => {
+                  const checked = (form.allowedPermitTypes as string[] | undefined)?.includes(p.v) || false;
+                  return (
+                    <label key={p.v} className="flex items-center gap-2 p-2 rounded hover:bg-muted/40 cursor-pointer">
+                      <Checkbox
+                        checked={checked}
+                        onCheckedChange={() => {
+                          const list = (form.allowedPermitTypes as string[] | undefined) || [];
+                          const next = checked ? list.filter(x => x !== p.v) : [...list, p.v];
+                          setForm(prev => ({ ...prev, allowedPermitTypes: next as any }));
+                        }}
+                      />
+                      <span className="text-sm">{language === 'ar' ? p.ar : p.en}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {t('ملصقات المركبات متاحة دائماً للمستخدمين الخارجيين النشطين.', 'Vehicle stickers are always available to active external users.')}
+              </p>
+            </div>
+
             <div className="flex items-center gap-3 p-3 border border-border rounded-lg">
               <Switch
                 checked={form.active ?? true}
