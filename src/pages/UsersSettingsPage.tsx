@@ -4,9 +4,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { User, UserRole, SystemRole } from '@/types';
+import { PermitSignAuthority } from '@/types/permit';
+import { PERMIT_AUTHORITY_CATALOG } from '@/lib/permitAuthority';
 import { v4 as uuidv4 } from 'uuid';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
@@ -146,6 +149,70 @@ export default function UsersSettingsPage() {
                       {language === 'ar' ? 'حذف' : 'Remove'}
                     </button>
                   )}
+                </div>
+              </div>
+
+              {/* Permit signing authorities */}
+              <div className="col-span-2">
+                <Label className="block mb-2">
+                  {language === 'ar' ? 'صلاحيات التواقيع - نظام التصاريح' : 'Permit Signing Authorities'}
+                </Label>
+                <div className="border border-border rounded-lg p-3 space-y-3 bg-muted/20">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">
+                      {language === 'ar' ? 'صلاحيات التوقيع على أنواع التصاريح' : 'Permit Type Sign-off'}
+                    </p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {PERMIT_AUTHORITY_CATALOG.filter(a => a.group === 'permit').map(auth => {
+                        const checked = form.permitAuthorities?.includes(auth.value) || false;
+                        return (
+                          <label key={auth.value} className="flex items-center gap-2 cursor-pointer">
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={() => {
+                                const current = form.permitAuthorities || [];
+                                const next = checked
+                                  ? current.filter(x => x !== auth.value)
+                                  : [...current, auth.value];
+                                setForm(p => ({ ...p, permitAuthorities: next as PermitSignAuthority[] }));
+                              }}
+                            />
+                            <span className="text-sm">{language === 'ar' ? auth.ar : auth.en}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div className="border-t border-border pt-3">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">
+                      {language === 'ar' ? 'الأدوار التنظيمية (مرحلة الموافقة)' : 'Organizational Roles (approval stage)'}
+                    </p>
+                    <div className="grid grid-cols-1 gap-2">
+                      {PERMIT_AUTHORITY_CATALOG.filter(a => a.group === 'role').map(auth => {
+                        const checked = form.permitAuthorities?.includes(auth.value) || false;
+                        return (
+                          <label key={auth.value} className="flex items-center gap-2 cursor-pointer">
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={() => {
+                                const current = form.permitAuthorities || [];
+                                const next = checked
+                                  ? current.filter(x => x !== auth.value)
+                                  : [...current, auth.value];
+                                setForm(p => ({ ...p, permitAuthorities: next as PermitSignAuthority[] }));
+                              }}
+                            />
+                            <span className="text-sm">{language === 'ar' ? auth.ar : auth.en}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {language === 'ar'
+                      ? 'لتوقيع تصريح في مرحلة معينة يجب على المستخدم اختيار صلاحية النوع + الدور التنظيمي معاً.'
+                      : 'To sign a permit at a stage, the user must hold both the type authority and the role.'}
+                  </p>
                 </div>
               </div>
             </div>
