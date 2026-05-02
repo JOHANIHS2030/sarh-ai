@@ -8,6 +8,8 @@ export interface ExternalUser {
   email: string;
   companyName: string;
   allowedDepartmentIds: string[];
+  // Permit types this external user is allowed to submit (vehicle sticker is always allowed)
+  allowedPermitTypes?: import('./permit').PermitType[];
   active: boolean;
   createdAt: string;
 }
