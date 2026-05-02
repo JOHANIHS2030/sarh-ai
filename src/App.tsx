@@ -8,6 +8,7 @@ import { RequestProvider } from "@/contexts/RequestContext";
 import { CompanyProvider } from "@/contexts/CompanyContext";
 import { ExternalUsersProvider } from "@/contexts/ExternalUsersContext";
 import { VehicleStickerProvider } from "@/contexts/VehicleStickerContext";
+import { PermitsProvider } from "@/contexts/PermitsContext";
 import CompanySettingsPage from "@/pages/CompanySettingsPage";
 import LoginPage from "@/pages/LoginPage";
 import AppLayout from "@/components/AppLayout";
@@ -30,6 +31,11 @@ import MyStickersPage from "@/pages/stickers/MyStickersPage";
 import StickerPendingApprovalsPage from "@/pages/stickers/StickerPendingApprovalsPage";
 import AllStickersPage from "@/pages/stickers/AllStickersPage";
 import VehicleStickerDetailsPage from "@/pages/stickers/VehicleStickerDetailsPage";
+import NewPermitPage from "@/pages/permits/NewPermitPage";
+import MyPermitsPage from "@/pages/permits/MyPermitsPage";
+import PermitPendingApprovalsPage from "@/pages/permits/PermitPendingApprovalsPage";
+import AllPermitsPage from "@/pages/permits/AllPermitsPage";
+import PermitDetailsPage from "@/pages/permits/PermitDetailsPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +61,13 @@ function AuthenticatedApp() {
         <Route path="/stickers/pending" element={<StickerPendingApprovalsPage />} />
         <Route path="/stickers/all" element={<AllStickersPage />} />
         <Route path="/stickers/request/:id" element={<VehicleStickerDetailsPage />} />
+
+        {/* Permits */}
+        <Route path="/permits/new" element={<NewPermitPage />} />
+        <Route path="/permits/my" element={<MyPermitsPage />} />
+        <Route path="/permits/pending" element={<PermitPendingApprovalsPage />} />
+        <Route path="/permits/all" element={<AllPermitsPage />} />
+        <Route path="/permits/request/:id" element={<PermitDetailsPage />} />
 
         <Route path="/settings/users" element={<UsersSettingsPage />} />
         <Route path="/settings/external-users" element={<ExternalUsersSettingsPage />} />
