@@ -5,7 +5,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { NavLink } from '@/components/NavLink';
 import {
   LayoutDashboard, FilePlus, FileText, CheckSquare, LogOut, Globe, Shield,
-  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench
+  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench, ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationsBell from '@/components/NotificationsBell';
@@ -24,6 +24,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isIdCardTeam = currentUser?.systemRole === 'id_card_executor' || currentUser?.systemRole === 'security_chief';
   const isSafety = currentUser?.systemRole === 'safety_orientation' || currentUser?.systemRole === 'ehss_manager';
   const isDeptManager = currentUser?.systemRole === 'dept_manager' || currentUser?.systemRole === 'hr_manager';
+  const hasPermitAuthority = (currentUser?.permitAuthorities?.length || 0) > 0;
+  const canApprovePermits = isDeptManager || hasPermitAuthority || isAdmin;
 
   type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; show: boolean };
   type NavGroup = { id: string; icon: typeof LayoutDashboard; labelAr: string; labelEn: string; items: NavItem[]; show: boolean };
@@ -40,6 +42,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { to: '/stickers/my', icon: Car, label: language === 'ar' ? 'ملصقاتي' : 'My Stickers', show: true },
     { to: '/stickers/pending', icon: CheckSquare, label: language === 'ar' ? 'موافقات الملصقات' : 'Sticker Approvals', show: isDeptManager || isIdCardTeam || isAdmin },
     { to: '/stickers/all', icon: FileText, label: language === 'ar' ? 'جميع الملصقات' : 'All Stickers', show: isAdmin || isIdCardTeam },
+  ];
+
+  const permitItems: NavItem[] = [
+    { to: '/permits/new', icon: FilePlus, label: language === 'ar' ? 'طلب تصريح جديد' : 'New Permit', show: true },
+    { to: '/permits/my', icon: ShieldCheck, label: language === 'ar' ? 'تصاريحي' : 'My Permits', show: true },
+    { to: '/permits/pending', icon: CheckSquare, label: language === 'ar' ? 'موافقات التصاريح' : 'Permit Approvals', show: canApprovePermits },
+    { to: '/permits/all', icon: FileText, label: language === 'ar' ? 'جميع التصاريح' : 'All Permits', show: hasPermitAuthority || isAdmin },
   ];
 
   const adminItems: NavItem[] = [
@@ -68,6 +77,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
       labelEn: 'Vehicle Stickers System',
       items: stickerItems.filter(i => i.show),
       show: stickerItems.some(i => i.show),
+    },
+    {
+      id: 'permits',
+      icon: ShieldCheck,
+      labelAr: 'نظام طلبات إصدار التصاريح',
+      labelEn: 'Permit Issuance System',
+      items: permitItems.filter(i => i.show),
+      show: permitItems.some(i => i.show),
     },
     {
       id: 'admin',

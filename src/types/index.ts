@@ -35,6 +35,8 @@ export interface User {
   departmentId?: string;
   canApproveDepartments?: string[];
   signature?: string; // base64 signature image
+  // Permit-system signing authorities (checkbox-based, customizable per user)
+  permitAuthorities?: import('./permit').PermitSignAuthority[];
 }
 
 export interface Department {
