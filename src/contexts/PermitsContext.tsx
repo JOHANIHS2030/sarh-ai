@@ -19,9 +19,12 @@ const STORAGE_KEY = 'farabi_permits';
 
 // Workflow per permit type — sequential pipeline
 export const PERMIT_WORKFLOW: Record<PermitType, PermitStatus[]> = {
+  // Mobile: Dept Manager → Security Chief → EHSS Manager (final)
   mobile_phone: ['pending_dept_manager', 'pending_security_chief', 'pending_ehss_manager', 'approved'],
+  // Laptop: Dept Manager → IT → Security Chief (final)
   laptop: ['pending_dept_manager', 'pending_it_review', 'pending_security_chief', 'approved'],
-  photography: ['pending_dept_manager', 'pending_security_chief', 'pending_ehss_manager', 'approved'],
+  // Photography: Dept Manager → Security Chief (final, then EHSS signs the conditions block on print)
+  photography: ['pending_dept_manager', 'pending_security_chief', 'approved'],
 };
 
 export function nextPermitStatus(type: PermitType, current: PermitStatus): PermitStatus {
