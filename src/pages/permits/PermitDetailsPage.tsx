@@ -385,7 +385,7 @@ export default function PermitDetailsPage() {
   );
 }
 
-function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Field({ label, value, mono }: { label: string; value: string | undefined | null; mono?: boolean }) {
   return (
     <div>
       <p className="text-xs text-muted-foreground">{label}</p>
