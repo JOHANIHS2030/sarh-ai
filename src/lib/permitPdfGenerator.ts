@@ -121,6 +121,14 @@ export async function generatePermitPDF({
     .status-wrap { text-align: center; }
     .footer { position: absolute; bottom: 14px; left: 36px; right: 36px; display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; padding-top: 6px; border-top: 1px solid #e2e8f0; }
     .note { background: #fffbea; border: 1px solid #fde68a; padding: 8px; border-radius: 4px; font-size: 10px; color: #92400e; margin-top: 6px; }
+    .declaration { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 10px; margin: 10px 0; }
+    .declaration .decl-title { font-weight: 700; color: #1a365d; font-size: 12px; margin-bottom: 6px; }
+    .declaration p { font-size: 10.5px; line-height: 1.55; color: #1f2937; margin-bottom: 6px; }
+    .conditions { margin-top: 10px; }
+    .conditions .cond-title { background: #1a365d; color: #fff; padding: 6px 10px; font-size: 11px; font-weight: 700; border-radius: 3px; }
+    .conditions .cond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+    .conditions ol { padding-${isAr ? 'right' : 'left'}: 18px; font-size: 9.5px; color: #1f2937; line-height: 1.5; }
+    .conditions ol li { margin-bottom: 3px; }
   </style>`;
 
   const headerHtml = `
