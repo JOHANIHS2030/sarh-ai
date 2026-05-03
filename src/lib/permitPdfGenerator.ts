@@ -273,13 +273,14 @@ export async function generatePermitPDF({
   const statusClass = permit.status === 'approved' ? 'status-approved' : 'status-other';
   const statusBadge = `<div class="status-wrap"><span class="status-badge ${statusClass}">${permit.status === 'approved' ? '✓ ' : ''}${escapeHtml(statusLabel.toUpperCase())}</span></div>`;
 
-  const html = styles + `<div class="pdf-page">
+  const page1 = `<div class="pdf-page">
     ${headerHtml}
     <div class="title-bar">${tr('نموذج طلب تصريح', 'PERMIT REQUEST FORM')} — ${escapeHtml(typeName)}</div>
     <div class="section-title">${tr('1. بيانات مقدم الطلب', '1. Applicant Information')}</div>
     ${applicantTable}
     <div class="section-title">${tr('2. تفاصيل التصريح', '2. Permit Details')}</div>
     ${detailsTable}
+    ${declarationHtml}
     <div class="section-title">${tr('3. بيانات التقديم', '3. Submission Details')}</div>
     ${submitTable}
     <div class="section-title">${tr('4. المراحل والتواقيع', '4. Approval Stages & Signatures')}</div>
@@ -287,6 +288,15 @@ export async function generatePermitPDF({
     ${statusBadge}
     ${footerHtml}
   </div>`;
+
+  const page2 = photoConditionsHtml ? `<div class="pdf-page">
+    ${headerHtml}
+    <div class="title-bar">${tr('شروط وضوابط التصوير', 'PHOTOGRAPHY CONDITIONS & CONTROLS')}</div>
+    ${photoConditionsHtml}
+    ${footerHtml}
+  </div>` : '';
+
+  const html = styles + page1 + page2;
 
   await renderHtmlToPdf(html, `${permit.requestNumber}.pdf`);
 }
