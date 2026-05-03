@@ -134,6 +134,37 @@ export default function PermitDetailsPage() {
               <Download className="w-4 h-4" />{t('طباعة النموذج النهائي', 'Print Final Form')}
             </Button>
           )}
+          {(currentUser?.role === 'admin' || permit.createdBy === currentUser?.id) && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="gap-2">
+                  <Trash2 className="w-4 h-4" />{t('حذف الطلب', 'Delete')}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('تأكيد الحذف', 'Confirm Delete')}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('هل تريد حذف هذا الطلب نهائياً؟ لا يمكن التراجع عن هذا الإجراء.', 'Permanently delete this request? This cannot be undone.')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('إلغاء', 'Cancel')}</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      if (!currentUser) return;
+                      deletePermit(permit.id, currentUser.id);
+                      toast({ title: t('تم حذف الطلب', 'Request deleted') });
+                      navigate('/permits/my');
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {t('حذف', 'Delete')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <span className={`text-xs px-3 py-1 rounded-full font-medium ${
             permit.status === 'approved' ? 'bg-success/15 text-success' :
             permit.status === 'rejected' ? 'bg-destructive/15 text-destructive' :
