@@ -37,47 +37,59 @@ export interface PermitApplicantInfo {
 
 // ==== Per-permit type specifics ====
 
-// Mobile phone permit
+// Mobile phone permit (filled by employee or admin assistant)
 export interface MobilePermitDetails {
-  deviceType: string;            // Make/Model
+  requestDate: string;           // تاريخ الطلب
+  deviceType: string;            // نوع الجوال المراد إدخاله
+  declarationAccepted: boolean;  // إقرار وتعهد
+  // Optional/extra
   deviceImei?: string;
   serialNumber?: string;
-  reason: string;                // Justification
-  requestedFrom: string;         // date
-  requestedTo: string;           // date
+  reason?: string;
+  requestedFrom?: string;
+  requestedTo?: string;
 }
 
-// Laptop permit
+// Laptop permit (filled by admin assistant)
 export interface LaptopPermitDetails {
-  laptopBrand: string;
-  laptopModel: string;
-  serialNumber: string;
-  assetTag?: string;
-  reason: string;
-  requestedFrom: string;
-  requestedTo: string;
-  // IT review notes
+  requestedFrom: string;         // التاريخ من
+  requestedTo: string;           // التاريخ إلى
+  idCardNumber: string;          // رقم البطاقة
+  laptopBrand: string;           // نوع الجهاز المحمول
+  laptopModel: string;           // الموديل
+  serialNumber: string;          // الرقم التسلسلي
+  farabiStickerNo: string;       // رقم ملصق الفارابي
+  // IT review notes (optional - filled at IT stage)
   itReviewNotes?: string;
+  // Optional
+  assetTag?: string;
+  reason?: string;
 }
 
-// Photography permit
+// Photography type (multi-select)
+export interface PhotographyTypeFlags {
+  video: boolean;
+  photoDigital: boolean;         // فوتوغرافي / رقمي
+}
+
+// Photography permit (filled by admin assistant)
 export interface PhotographyPermitDetails {
-  // Photographer info
-  photographerName: string;
-  photographerId: string;        // Iqama / National ID
-  // Equipment
-  equipmentDescription: string;
-  // Requested dates / times
-  fromDate: string;
-  toDate: string;
+  cameraTypeAndNumber: string;   // نوع ورقم آلة التصوير
+  photographyType: PhotographyTypeFlags; // نوعية التصوير (فيديو / فوتوغرافي/رقمي)
+  locations: string;             // المنطقة (الموقع/المباني) المطلوب تصويرها
+  declarationAccepted: boolean;  // إقرار وتعهد
+  photographerName: string;      // اسم المصور المخصص (الفارابي)
+  photographerJobTitle: string;  // الوظيفة
+  // Extras (kept for backward compatibility)
+  photographerId?: string;
+  equipmentDescription?: string;
+  fromDate?: string;
+  toDate?: string;
   fromTime?: string;
   toTime?: string;
-  // Locations & justification
-  locations: string;             // areas to be photographed
-  purpose: string;               // reason for photography
-  // Adjacent military unit acknowledgment
-  affectsMilitaryUnit: boolean;
-  governorateApprovalRef?: string; // permit reference if affectsMilitaryUnit
+  purpose?: string;
+  affectsMilitaryUnit?: boolean;
+  governorateApprovalRef?: string;
 }
 
 // Approval / signature snapshot at each stage

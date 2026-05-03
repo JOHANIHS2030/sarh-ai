@@ -45,7 +45,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
   ];
 
   const permitItems: NavItem[] = [
-    { to: '/permits/new', icon: FilePlus, label: language === 'ar' ? 'طلب تصريح جديد' : 'New Permit', show: true },
+    { to: '/permits/new?type=mobile_phone', icon: FilePlus, label: language === 'ar' ? 'تصريح إدخال الجوال' : 'Mobile Phone Permit', show: true },
+    { to: '/permits/new?type=laptop', icon: FilePlus, label: language === 'ar' ? 'تصريح الكمبيوتر المحمول' : 'Laptop Permit', show: true },
+    { to: '/permits/new?type=photography', icon: FilePlus, label: language === 'ar' ? 'تصريح التصوير' : 'Photography Permit', show: true },
     { to: '/permits/my', icon: ShieldCheck, label: language === 'ar' ? 'تصاريحي' : 'My Permits', show: true },
     { to: '/permits/pending', icon: CheckSquare, label: language === 'ar' ? 'موافقات التصاريح' : 'Permit Approvals', show: canApprovePermits },
     { to: '/permits/all', icon: FileText, label: language === 'ar' ? 'جميع التصاريح' : 'All Permits', show: hasPermitAuthority || isAdmin },

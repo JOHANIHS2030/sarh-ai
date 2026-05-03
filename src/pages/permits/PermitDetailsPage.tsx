@@ -10,8 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  ArrowLeft, Smartphone, Laptop, Camera, ShieldCheck, Check, X, Pause, Paperclip, Download, Shield, History, User as UserIcon,
+  ArrowLeft, Smartphone, Laptop, Camera, ShieldCheck, Check, X, Pause, Paperclip, Download, Shield, History, User as UserIcon, Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
 import { canActOnPermit, canViewPermit, permitStatusLabel, permitTypeLabel } from '@/lib/permitAuthority';
 import { Department } from '@/types';
@@ -27,7 +31,7 @@ export default function PermitDetailsPage() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { currentUser, getUserById } = useAuth();
-  const { getPermitById, approvePermit, rejectPermit, holdPermit } = usePermits();
+  const { getPermitById, approvePermit, rejectPermit, holdPermit, deletePermit } = usePermits();
   const { settings: companySettings } = useCompany();
   const t = (ar: string, en: string) => (language === 'ar' ? ar : en);
 
@@ -130,6 +134,37 @@ export default function PermitDetailsPage() {
               <Download className="w-4 h-4" />{t('طباعة النموذج النهائي', 'Print Final Form')}
             </Button>
           )}
+          {(currentUser?.role === 'admin' || permit.createdBy === currentUser?.id) && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" className="gap-2">
+                  <Trash2 className="w-4 h-4" />{t('حذف الطلب', 'Delete')}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t('تأكيد الحذف', 'Confirm Delete')}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t('هل تريد حذف هذا الطلب نهائياً؟ لا يمكن التراجع عن هذا الإجراء.', 'Permanently delete this request? This cannot be undone.')}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t('إلغاء', 'Cancel')}</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      if (!currentUser) return;
+                      deletePermit(permit.id, currentUser.id);
+                      toast({ title: t('تم حذف الطلب', 'Request deleted') });
+                      navigate('/permits/my');
+                    }}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {t('حذف', 'Delete')}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <span className={`text-xs px-3 py-1 rounded-full font-medium ${
             permit.status === 'approved' ? 'bg-success/15 text-success' :
             permit.status === 'rejected' ? 'bg-destructive/15 text-destructive' :
@@ -181,55 +216,45 @@ export default function PermitDetailsPage() {
           <div className="flex items-center gap-2 mb-3"><Icon className="w-5 h-5 text-primary" /><h2 className="font-semibold">{t('بيانات التصريح', 'Permit Details')}</h2></div>
           {permit.mobile && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-              <Field label={t('نوع الجهاز', 'Device')} value={permit.mobile.deviceType} />
-              <Field label={t('IMEI', 'IMEI')} value={permit.mobile.deviceImei || ''} mono />
-              <Field label={t('الرقم التسلسلي', 'Serial')} value={permit.mobile.serialNumber || ''} mono />
-              <Field label={t('من', 'From')} value={permit.mobile.requestedFrom} />
-              <Field label={t('إلى', 'To')} value={permit.mobile.requestedTo} />
-              <div className="col-span-2 md:col-span-3">
-                <p className="text-xs text-muted-foreground">{t('السبب', 'Reason')}</p>
-                <p className="text-foreground whitespace-pre-wrap">{permit.mobile.reason}</p>
-              </div>
+              <Field label={t('تاريخ الطلب', 'Request Date')} value={permit.mobile.requestDate} />
+              <Field label={t('نوع الجوال', 'Mobile Type')} value={permit.mobile.deviceType} />
+              <Field label={t('الإقرار', 'Declaration')} value={permit.mobile.declarationAccepted ? t('مقبول', 'Accepted') : t('غير مقبول', 'Not Accepted')} />
             </div>
           )}
           {permit.laptop && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-              <Field label={t('الماركة', 'Brand')} value={permit.laptop.laptopBrand} />
+              <Field label={t('من تاريخ', 'From')} value={permit.laptop.requestedFrom} />
+              <Field label={t('إلى تاريخ', 'To')} value={permit.laptop.requestedTo} />
+              <Field label={t('رقم البطاقة', 'ID Card No.')} value={permit.laptop.idCardNumber} mono />
+              <Field label={t('نوع الجهاز', 'Laptop Type')} value={permit.laptop.laptopBrand} />
               <Field label={t('الموديل', 'Model')} value={permit.laptop.laptopModel} />
               <Field label={t('الرقم التسلسلي', 'Serial')} value={permit.laptop.serialNumber} mono />
-              <Field label={t('رقم الأصل', 'Asset Tag')} value={permit.laptop.assetTag || ''} mono />
-              <Field label={t('من', 'From')} value={permit.laptop.requestedFrom} />
-              <Field label={t('إلى', 'To')} value={permit.laptop.requestedTo} />
-              <div className="col-span-2 md:col-span-3">
-                <p className="text-xs text-muted-foreground">{t('السبب', 'Reason')}</p>
-                <p className="text-foreground whitespace-pre-wrap">{permit.laptop.reason}</p>
-              </div>
+              <Field label={t('رقم ملصق الفارابي', 'Farabi Sticker No.')} value={permit.laptop.farabiStickerNo} mono />
+              {permit.laptop.itReviewNotes && (
+                <div className="col-span-2 md:col-span-3">
+                  <p className="text-xs text-muted-foreground">{t('ملاحظات تقنية المعلومات', 'IT Notes')}</p>
+                  <p className="text-foreground whitespace-pre-wrap">{permit.laptop.itReviewNotes}</p>
+                </div>
+              )}
             </div>
           )}
           {permit.photography && (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-              <Field label={t('المصور', 'Photographer')} value={permit.photography.photographerName} />
-              <Field label={t('الهوية', 'ID')} value={permit.photography.photographerId} mono />
-              <Field label={t('من', 'From')} value={`${permit.photography.fromDate} ${permit.photography.fromTime || ''}`} />
-              <Field label={t('إلى', 'To')} value={`${permit.photography.toDate} ${permit.photography.toTime || ''}`} />
+              <Field label={t('نوع ورقم آلة التصوير', 'Camera Type & No.')} value={permit.photography.cameraTypeAndNumber} />
+              <Field
+                label={t('نوعية التصوير', 'Photography Type')}
+                value={[
+                  permit.photography.photographyType?.video ? t('فيديو', 'Video') : null,
+                  permit.photography.photographyType?.photoDigital ? t('فوتوغرافي/رقمي', 'Photo/Digital') : null,
+                ].filter(Boolean).join(' + ') || '—'}
+              />
+              <Field label={t('المصور المخصص', 'Designated Photographer')} value={permit.photography.photographerName} />
+              <Field label={t('الوظيفة', 'Job Title')} value={permit.photography.photographerJobTitle} />
+              <Field label={t('الإقرار', 'Declaration')} value={permit.photography.declarationAccepted ? t('مقبول', 'Accepted') : t('غير مقبول', 'Not Accepted')} />
               <div className="col-span-2 md:col-span-3">
-                <p className="text-xs text-muted-foreground">{t('المعدات', 'Equipment')}</p>
-                <p className="text-foreground">{permit.photography.equipmentDescription}</p>
-              </div>
-              <div className="col-span-2 md:col-span-3">
-                <p className="text-xs text-muted-foreground">{t('المواقع', 'Locations')}</p>
+                <p className="text-xs text-muted-foreground">{t('المنطقة المطلوب تصويرها', 'Locations to Photograph')}</p>
                 <p className="text-foreground whitespace-pre-wrap">{permit.photography.locations}</p>
               </div>
-              <div className="col-span-2 md:col-span-3">
-                <p className="text-xs text-muted-foreground">{t('الغرض', 'Purpose')}</p>
-                <p className="text-foreground whitespace-pre-wrap">{permit.photography.purpose}</p>
-              </div>
-              {permit.photography.affectsMilitaryUnit && (
-                <div className="col-span-2 md:col-span-3 p-3 bg-amber-50 border border-amber-200 rounded">
-                  <p className="text-xs font-semibold text-amber-900">{t('تأثر وحدة عسكرية مجاورة', 'Adjacent military unit affected')}</p>
-                  <p className="text-sm text-amber-800">{t('مرجع تصريح المحافظة', 'Governorate ref')}: <strong>{permit.photography.governorateApprovalRef}</strong></p>
-                </div>
-              )}
             </div>
           )}
         </CardContent>
@@ -360,7 +385,7 @@ export default function PermitDetailsPage() {
   );
 }
 
-function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Field({ label, value, mono }: { label: string; value: string | undefined | null; mono?: boolean }) {
   return (
     <div>
       <p className="text-xs text-muted-foreground">{label}</p>

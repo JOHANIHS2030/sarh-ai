@@ -121,6 +121,14 @@ export async function generatePermitPDF({
     .status-wrap { text-align: center; }
     .footer { position: absolute; bottom: 14px; left: 36px; right: 36px; display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; padding-top: 6px; border-top: 1px solid #e2e8f0; }
     .note { background: #fffbea; border: 1px solid #fde68a; padding: 8px; border-radius: 4px; font-size: 10px; color: #92400e; margin-top: 6px; }
+    .declaration { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; padding: 10px; margin: 10px 0; }
+    .declaration .decl-title { font-weight: 700; color: #1a365d; font-size: 12px; margin-bottom: 6px; }
+    .declaration p { font-size: 10.5px; line-height: 1.55; color: #1f2937; margin-bottom: 6px; }
+    .conditions { margin-top: 10px; }
+    .conditions .cond-title { background: #1a365d; color: #fff; padding: 6px 10px; font-size: 11px; font-weight: 700; border-radius: 3px; }
+    .conditions .cond-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px; }
+    .conditions ol { padding-${isAr ? 'right' : 'left'}: 18px; font-size: 9.5px; color: #1f2937; line-height: 1.5; }
+    .conditions ol li { margin-bottom: 3px; }
   </style>`;
 
   const headerHtml = `
@@ -160,41 +168,81 @@ export async function generatePermitPDF({
   </table>`;
 
   let detailsTable = '';
+  let declarationHtml = '';
+  let photoConditionsHtml = '';
+
   if (permit.mobile) {
     detailsTable = `<table class="fields">
-      ${row(tr('نوع الجهاز', 'Device'), permit.mobile.deviceType)}
-      ${row(tr('IMEI', 'IMEI'), permit.mobile.deviceImei || '')}
-      ${row(tr('الرقم التسلسلي', 'Serial'), permit.mobile.serialNumber || '')}
-      ${row(tr('من تاريخ', 'From'), permit.mobile.requestedFrom)}
-      ${row(tr('إلى تاريخ', 'To'), permit.mobile.requestedTo)}
-      ${row(tr('السبب', 'Reason'), permit.mobile.reason)}
+      ${row(tr('تاريخ الطلب', 'Request Date'), permit.mobile.requestDate)}
+      ${row(tr('القسم', 'Department'), department ? (isAr ? department.nameAr : department.nameEn) : '—')}
+      ${row(tr('نوع الجوال المراد إدخاله', 'Mobile Type to Enter'), permit.mobile.deviceType)}
     </table>`;
+    declarationHtml = `<div class="declaration">
+      <div class="decl-title">${tr('إقرار وتعهد', 'Declaration and Undertaking')}</div>
+      <p dir="rtl" lang="ar">${escapeHtml('تمت مراجعة هذا الطلب بعد تعبئته بالمعلومات المطلوبة للحصول على موافقتكم لإدخال الجوال المطلوب للغرض المشار إليه في هذا التصريح وأن يتم استخدامه في منطقة المكاتب وغرفة التحكم الرئيسية فقط وحسب حاجة العمل.')}</p>
+      <p dir="ltr" lang="en">${escapeHtml('I hereby refer to this application after it has been filled in with the required information to get your consent to be authorized as intended purpose of this application and will be used in offices, MCR and for the work purpose only.')}</p>
+    </div>`;
   } else if (permit.laptop) {
     detailsTable = `<table class="fields">
-      ${row(tr('الماركة', 'Brand'), permit.laptop.laptopBrand)}
-      ${row(tr('الموديل', 'Model'), permit.laptop.laptopModel)}
-      ${row(tr('الرقم التسلسلي', 'Serial'), permit.laptop.serialNumber)}
-      ${row(tr('رقم الأصل', 'Asset Tag'), permit.laptop.assetTag || '')}
-      ${row(tr('من تاريخ', 'From'), permit.laptop.requestedFrom)}
-      ${row(tr('إلى تاريخ', 'To'), permit.laptop.requestedTo)}
-      ${row(tr('السبب', 'Reason'), permit.laptop.reason)}
+      ${row(tr('التاريخ من', 'Date From'), permit.laptop.requestedFrom)}
+      ${row(tr('التاريخ إلى', 'Date To'), permit.laptop.requestedTo)}
+      ${row(tr('القسم', 'Department'), department ? (isAr ? department.nameAr : department.nameEn) : '—')}
+      ${row(tr('اسم الموظف', 'Employee Name'), permit.applicant.name)}
+      ${row(tr('رقم البطاقة', 'ID Card Number'), permit.laptop.idCardNumber)}
+      ${row(tr('الوظيفة', 'Job Title'), permit.applicant.jobTitle)}
+      ${row(tr('نوع وموديل الجهاز المحمول', 'Laptop Type & Model'), `${permit.laptop.laptopBrand} ${permit.laptop.laptopModel || ''}`.trim())}
+      ${row(tr('الرقم التسلسلي', 'Serial Number'), permit.laptop.serialNumber)}
+      ${row(tr('رقم ملصق الفارابي', 'Farabi Sticker Number'), permit.laptop.farabiStickerNo)}
+      ${permit.laptop.itReviewNotes ? row(tr('ملاحظات تقنية المعلومات', 'IT Notes'), permit.laptop.itReviewNotes) : ''}
     </table>`;
   } else if (permit.photography) {
     const p = permit.photography;
+    const ptype = [p.photographyType?.video ? tr('فيديو', 'Video') : null,
+      p.photographyType?.photoDigital ? tr('فوتوغرافي / رقمي', 'Photographic / Digital') : null]
+      .filter(Boolean).join(' + ');
     detailsTable = `<table class="fields">
-      ${row(tr('اسم المصور', 'Photographer'), p.photographerName)}
-      ${row(tr('رقم الهوية', 'ID'), p.photographerId)}
-      ${row(tr('المعدات', 'Equipment'), p.equipmentDescription)}
-      ${row(tr('من', 'From'), `${p.fromDate} ${p.fromTime || ''}`)}
-      ${row(tr('إلى', 'To'), `${p.toDate} ${p.toTime || ''}`)}
-      ${row(tr('المواقع', 'Locations'), p.locations)}
-      ${row(tr('الغرض', 'Purpose'), p.purpose)}
-      ${p.affectsMilitaryUnit ? row(tr('مرجع تصريح المحافظة', 'Governorate Approval Ref.'), p.governorateApprovalRef || '') : ''}
-    </table>
-    ${p.affectsMilitaryUnit ? `<div class="note">${tr(
-      'في حال تأثر وحدة عسكرية مجاورة، يتم الحصول على تصريح من المحافظة وتقوم المحافظة بالتنسيق مع قيادة المنطقة العسكرية.',
-      'When an adjacent military unit is affected, a permit is obtained from the Governorate, which coordinates with the military district command.'
-    )}</div>` : ''}`;
+      ${row(tr('القسم', 'Department'), department ? (isAr ? department.nameAr : department.nameEn) : '—')}
+      ${row(tr('نوع ورقم آلة التصوير', 'Camera Type & Number'), p.cameraTypeAndNumber)}
+      ${row(tr('نوعية التصوير', 'Photography Type'), ptype)}
+      ${row(tr('المنطقة المطلوب تصويرها', 'Areas to be Photographed'), p.locations)}
+      ${row(tr('اسم المصور المخصص (الفارابي)', 'Designated Photographer (FYPC)'), p.photographerName)}
+      ${row(tr('الوظيفة', 'Job Title'), p.photographerJobTitle)}
+    </table>`;
+    declarationHtml = `<div class="declaration">
+      <div class="decl-title">${tr('إقرار وتعهد', 'Declaration and Undertaking')}</div>
+      <p dir="rtl" lang="ar">${escapeHtml('تمت مراجعة هذا الطلب بعد تعبئته بالمعلومات المطلوبة للحصول على مرافقتكم لإجراء التصوير المطلوب للغرض المشار إليه في هذا التصريح. وبهذا أؤكد بأن عملية التصوير سوف تتم حسب الشروط المذكورة في هذا التصريح وسوف تتم إجراءاتها طبقاً للأنظمة والتعليمات المبلغة لنا بهذا الخصوص.')}</p>
+      <p dir="ltr" lang="en">${escapeHtml('I hereby refer to this application after it has been filled in with the required information to get your consent to be authorized as intended purpose of this application. I, the undersigned further confirm that the process of photography will be carried out in accordance with the conditions mentioned in this application knowing that the process of photography will be conducted in conformity with the rules and controls will be implemented in this regard.')}</p>
+    </div>`;
+
+    const condAr = [
+      'يجب أن تتم عملية التصوير طبقاً للضوابط المدرجة أدناه. وعدم الوفاء لأي من الضوابط سوف لا يستحق لهذه العملية.',
+      'يجب تحديد الغرض والنوع من التصوير وكذلك الجهة المنفذة له.',
+      'يجب تنفيذ عملية التصوير من قبل موظف سعودي لدى شركة الفارابي مصرح له بالتصوير من قبل إدارة البيئة والصحة والسلامة والأمن. وإذا تعذر ذلك فبالإمكان الاستعانة بخبرات مصورين غير سعوديين من جهات أخرى حيث أن عملية التصوير تنفذ تحت إشراف مباشر من قبل مشرف وردية الأمن بإدارة البيئة والصحة والسلامة والأمن.',
+      'يجب تحديد المنطقة المطلوبة للتصوير (مواقع/مباني الخ) وكذلك المنشآت المجاورة وينبغي ألا يظهر أي مواقع أخرى في التصوير.',
+      'يقدم محضر ضبط تصوير إلى إدارة البيئة والصحة والسلامة والأمن بعد إكمال التصوير مع ذكر عدد الصور الملتقطة والمدة من البداية إلى النهاية.',
+      'يتم التأكد من تلافي تصوير المنشأة المجاورة بالتحكم في زاوية عدسة التصوير للكاميرا ويتم توثيق كل اللقطات التي تم أخذها بمحضر ضبط التصوير والموقع من إدارة البيئة والصحة والسلامة والأمن والجهة الطالبة.',
+      'يجب أن يتم التصوير تحت إشراف ومتابعة مشرف وردية الأمن بإدارة البيئة والصحة والسلامة والأمن. ويتولى قسم الأمن الإشراف على حفظ وتوثيق الصور والأفلام وأساساتها وكل ما يتعلق بذلك من وثائق داخل المنشأة في مكان آمن واستعمالها للغرض الذي صورت من أجله فقط.',
+      'لا يتم استعمال الفيلم أو الصور الملتقطة للمنشأة للغرض الذي صورت من أجله إلا بعد إجازة الصور أو الفيلم من الناحية الأمنية من قبل إدارة البيئة والصحة والسلامة والأمن والجهة الطالبة للتصوير بالمنشأة وفق محضر إجازة صور.',
+      'يصدر تصريح التصوير للمصور الذي يقوم بالتقاط الصور.',
+    ];
+    const condEn = [
+      'The photography session shall only be carried out in accordance to below conditions. Any condition that will not be met shall not merit the session.',
+      'Photography shall be conducted by an authorized FYPC employee.',
+      'The purpose of the intended photography shall be indicated in the permit. Specifying the type of photography and the party conducting it. The subject (i.e., site, building) to be photographed and the adjacent establishments should be specified. No other subject must be intently visible in the photography.',
+      'The undertakings on the permit shall be understood by party or department concerned who carry out the photography. The party or concerned department shall be accountable if they have been found to have violated the instructions stipulated in the conditions of photography.',
+      'Photography shall be conducted under the supervision and follow-up of a Security Supervisor in the EHSS Department of which the data, documentation of the pictures and films and their negatives as well as all other related material shall be controlled and stored by Security Section. Photos or videos shall not be used for any other purpose that is permitted for.',
+      'The intended number of photographs needed for the process of shooting shall be indicated together with the duration at which the process should begin and end.',
+      'A photography report shall be submitted to Security Section after the shoot indicating the number of photographs taken in the process together with the duration at which the process started and ended.',
+      'The camera zooming should be controlled in a way that the adjacent establishments may not appear in the photograph. The photo session should be documented in the photography report by the party or concerned department.',
+      'In the case of a military unit adjacent to the site intended to be photographed is affected, a permit should be obtained from the Governorate which will, in turn, coordinate in this respect with the command of the military district which the said adjacent military unit follows.',
+    ];
+    photoConditionsHtml = `<div class="conditions">
+      <div class="cond-title">${tr('الشروط والضوابط لإصدار تصريح التصوير', 'Conditions for Issuing Photography Permit')}</div>
+      <div class="cond-grid">
+        <ol dir="rtl" lang="ar">${condAr.map(c => `<li>${escapeHtml(c)}</li>`).join('')}</ol>
+        <ol dir="ltr" lang="en">${condEn.map(c => `<li>${escapeHtml(c)}</li>`).join('')}</ol>
+      </div>
+    </div>`;
   }
 
   // Stage signature boxes
@@ -225,13 +273,14 @@ export async function generatePermitPDF({
   const statusClass = permit.status === 'approved' ? 'status-approved' : 'status-other';
   const statusBadge = `<div class="status-wrap"><span class="status-badge ${statusClass}">${permit.status === 'approved' ? '✓ ' : ''}${escapeHtml(statusLabel.toUpperCase())}</span></div>`;
 
-  const html = styles + `<div class="pdf-page">
+  const page1 = `<div class="pdf-page">
     ${headerHtml}
     <div class="title-bar">${tr('نموذج طلب تصريح', 'PERMIT REQUEST FORM')} — ${escapeHtml(typeName)}</div>
     <div class="section-title">${tr('1. بيانات مقدم الطلب', '1. Applicant Information')}</div>
     ${applicantTable}
     <div class="section-title">${tr('2. تفاصيل التصريح', '2. Permit Details')}</div>
     ${detailsTable}
+    ${declarationHtml}
     <div class="section-title">${tr('3. بيانات التقديم', '3. Submission Details')}</div>
     ${submitTable}
     <div class="section-title">${tr('4. المراحل والتواقيع', '4. Approval Stages & Signatures')}</div>
@@ -239,6 +288,15 @@ export async function generatePermitPDF({
     ${statusBadge}
     ${footerHtml}
   </div>`;
+
+  const page2 = photoConditionsHtml ? `<div class="pdf-page">
+    ${headerHtml}
+    <div class="title-bar">${tr('شروط وضوابط التصوير', 'PHOTOGRAPHY CONDITIONS & CONTROLS')}</div>
+    ${photoConditionsHtml}
+    ${footerHtml}
+  </div>` : '';
+
+  const html = styles + page1 + page2;
 
   await renderHtmlToPdf(html, `${permit.requestNumber}.pdf`);
 }

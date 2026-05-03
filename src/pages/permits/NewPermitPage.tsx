@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRequests } from '@/contexts/RequestContext';
@@ -28,16 +28,26 @@ function fileToBase64(file: File): Promise<string> {
   });
 }
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 const emptyApplicant: PermitApplicantInfo = {
   name: '', employeeId: '', jobTitle: '', nationality: '', departmentId: '',
 };
-const emptyMobile: MobilePermitDetails = { deviceType: '', reason: '', requestedFrom: '', requestedTo: '' };
+const emptyMobile: MobilePermitDetails = {
+  requestDate: today(), deviceType: '', declarationAccepted: false,
+};
 const emptyLaptop: LaptopPermitDetails = {
-  laptopBrand: '', laptopModel: '', serialNumber: '', reason: '', requestedFrom: '', requestedTo: '',
+  requestedFrom: '', requestedTo: '', idCardNumber: '',
+  laptopBrand: '', laptopModel: '', serialNumber: '', farabiStickerNo: '',
 };
 const emptyPhoto: PhotographyPermitDetails = {
-  photographerName: '', photographerId: '', equipmentDescription: '',
-  fromDate: '', toDate: '', locations: '', purpose: '', affectsMilitaryUnit: false,
+  cameraTypeAndNumber: '',
+  photographyType: { video: false, photoDigital: false },
+  locations: '',
+  declarationAccepted: false,
+  photographerName: '',
+  photographerJobTitle: '',
+  affectsMilitaryUnit: false,
 };
 
 export default function NewPermitPage() {
@@ -46,9 +56,11 @@ export default function NewPermitPage() {
   const { requests } = useRequests();
   const { addPermit } = usePermits();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const t = (ar: string, en: string) => (language === 'ar' ? ar : en);
 
-  const [permitType, setPermitType] = useState<PermitType>('mobile_phone');
+  const initialType = (searchParams.get('type') as PermitType) || 'mobile_phone';
+  const [permitType, setPermitType] = useState<PermitType>(initialType);
   const [applicant, setApplicant] = useState<PermitApplicantInfo>(emptyApplicant);
   const [mobile, setMobile] = useState<MobilePermitDetails>(emptyMobile);
   const [laptop, setLaptop] = useState<LaptopPermitDetails>(emptyLaptop);
@@ -56,6 +68,13 @@ export default function NewPermitPage() {
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [submitting, setSubmitting] = useState(false);
   const [linkedIdRequestId, setLinkedIdRequestId] = useState<string>('');
+
+  // Sync state when ?type= changes (sub-menu navigation)
+  useEffect(() => {
+    const tp = searchParams.get('type') as PermitType | null;
+    if (tp && tp !== permitType) setPermitType(tp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   const departments: Department[] = useMemo(
     () => readLocalJSON<Department[]>('farabi_departments', initialDepartments),
@@ -82,11 +101,22 @@ export default function NewPermitPage() {
       departmentId: req.departmentId,
       companyName: req.companyNameTel,
     }));
+    if (permitType === 'laptop') {
+      setLaptop(p => ({ ...p, idCardNumber: req.nationalIdNo || req.employeeId }));
+    }
+    if (permitType === 'photography') {
+      setPhotography(p => ({
+        ...p,
+        photographerName: language === 'ar' ? req.nameAr : req.nameEn,
+        photographerJobTitle: req.jobTitle,
+        photographerId: req.nationalIdNo || req.employeeId,
+      }));
+    }
   };
 
   const types: { value: PermitType; ar: string; en: string; icon: typeof Smartphone }[] = [
     { value: 'mobile_phone', ar: 'تصريح إدخال الجوال', en: 'Mobile Phone Permit', icon: Smartphone },
-    { value: 'laptop', ar: 'تصريح إدخال الكمبيوتر المحمول', en: 'Laptop Permit', icon: Laptop },
+    { value: 'laptop', ar: 'تصريح إدخال وخروج الكمبيوتر المحمول', en: 'Laptop Entry/Exit Permit', icon: Laptop },
     { value: 'photography', ar: 'تصريح التصوير الفوتوغرافي', en: 'Photography Permit', icon: Camera },
   ];
 
@@ -95,22 +125,29 @@ export default function NewPermitPage() {
       return t('يرجى تعبئة بيانات مقدم الطلب', 'Please fill applicant info');
     }
     if (permitType === 'mobile_phone') {
-      if (!mobile.deviceType || !mobile.reason || !mobile.requestedFrom || !mobile.requestedTo) {
+      if (!mobile.requestDate || !mobile.deviceType) {
         return t('يرجى تعبئة بيانات تصريح الجوال', 'Please fill mobile permit details');
+      }
+      if (!mobile.declarationAccepted) {
+        return t('يرجى الموافقة على الإقرار والتعهد', 'Please accept the declaration and undertaking');
       }
     }
     if (permitType === 'laptop') {
-      if (!laptop.laptopBrand || !laptop.serialNumber || !laptop.reason || !laptop.requestedFrom || !laptop.requestedTo) {
+      if (!laptop.requestedFrom || !laptop.requestedTo || !laptop.idCardNumber
+        || !laptop.laptopBrand || !laptop.serialNumber || !laptop.farabiStickerNo) {
         return t('يرجى تعبئة بيانات تصريح الكمبيوتر', 'Please fill laptop permit details');
       }
     }
     if (permitType === 'photography') {
-      if (!photography.photographerName || !photography.photographerId || !photography.equipmentDescription
-        || !photography.fromDate || !photography.toDate || !photography.locations || !photography.purpose) {
+      if (!photography.cameraTypeAndNumber || !photography.locations
+        || !photography.photographerName || !photography.photographerJobTitle) {
         return t('يرجى تعبئة بيانات تصريح التصوير', 'Please fill photography permit details');
       }
-      if (photography.affectsMilitaryUnit && !photography.governorateApprovalRef) {
-        return t('يرجى إدخال مرجع تصريح المحافظة', 'Please enter governorate approval reference');
+      if (!photography.photographyType.video && !photography.photographyType.photoDigital) {
+        return t('يرجى اختيار نوعية التصوير', 'Please select photography type');
+      }
+      if (!photography.declarationAccepted) {
+        return t('يرجى الموافقة على الإقرار والتعهد', 'Please accept the declaration and undertaking');
       }
     }
     return null;
@@ -150,6 +187,13 @@ export default function NewPermitPage() {
     }
   };
 
+  // Declaration texts
+  const mobileDeclAr = 'تمت مراجعة هذا الطلب بعد تعبئته بالمعلومات المطلوبة للحصول على موافقتكم لإدخال الجوال المطلوب للغرض المشار إليه في هذا التصريح وأن يتم استخدامه في منطقة المكاتب وغرفة التحكم الرئيسية فقط وحسب حاجة العمل.';
+  const mobileDeclEn = 'I hereby refer to this application after it has been filled in with the required information to get your consent to be authorized as intended purpose of this application and will be used in offices, MCR and for the work purpose only.';
+
+  const photoDeclAr = 'تمت مراجعة هذا الطلب بعد تعبئته بالمعلومات المطلوبة للحصول على موافقتكم لإجراء التصوير المطلوب للغرض المشار إليه في هذا التصريح. وبهذا أؤكد بأن عملية التصوير سوف تتم حسب الشروط المذكورة في هذا التصريح وسوف تتم إجراءاتها طبقاً للأنظمة والتعليمات المبلغة لنا بهذا الخصوص.';
+  const photoDeclEn = 'I hereby refer to this application after it has been filled in with the required information to get your consent to be authorized as intended purpose of this application. I, the undersigned further confirm that the process of photography will be carried out in accordance with the conditions mentioned in this application knowing that the process of photography will be conducted in conformity with the rules and controls will be implemented in this regard.';
+
   return (
     <div className="space-y-4 max-w-5xl mx-auto">
       <div className="flex items-center gap-3">
@@ -178,7 +222,7 @@ export default function NewPermitPage() {
                     active ? 'border-primary bg-primary/10 text-primary' : 'border-border text-muted-foreground hover:border-primary/50'
                   }`}>
                   <Icon className="w-6 h-6" />
-                  <span className="font-medium text-start">{language === 'ar' ? s.ar : s.en}</span>
+                  <span className="font-medium text-start text-sm">{language === 'ar' ? s.ar : s.en}</span>
                 </button>
               );
             })}
@@ -210,12 +254,12 @@ export default function NewPermitPage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div><Label className="text-sm">{t('الاسم', 'Name')} *</Label><Input value={applicant.name} onChange={e => setApplicant(p => ({ ...p, name: e.target.value }))} /></div>
+            <div><Label className="text-sm">{t('اسم الموظف', 'Employee Name')} *</Label><Input value={applicant.name} onChange={e => setApplicant(p => ({ ...p, name: e.target.value }))} /></div>
             <div><Label className="text-sm">{t('الرقم الوظيفي', 'Employee ID')} *</Label><Input value={applicant.employeeId} onChange={e => setApplicant(p => ({ ...p, employeeId: e.target.value }))} /></div>
-            <div><Label className="text-sm">{t('المسمى الوظيفي', 'Job Title')}</Label><Input value={applicant.jobTitle} onChange={e => setApplicant(p => ({ ...p, jobTitle: e.target.value }))} /></div>
+            <div><Label className="text-sm">{t('الوظيفة', 'Job Title')}</Label><Input value={applicant.jobTitle} onChange={e => setApplicant(p => ({ ...p, jobTitle: e.target.value }))} /></div>
             <div><Label className="text-sm">{t('الجنسية', 'Nationality')}</Label><Input value={applicant.nationality} onChange={e => setApplicant(p => ({ ...p, nationality: e.target.value }))} /></div>
             <div className="md:col-span-2">
-              <Label className="text-sm">{t('الإدارة المعنية', 'Department')} *</Label>
+              <Label className="text-sm">{t('الجهة / الإدارة', 'Department')} *</Label>
               <Select value={applicant.departmentId} onValueChange={v => setApplicant(p => ({ ...p, departmentId: v }))}>
                 <SelectTrigger><SelectValue placeholder={t('اختر القسم', 'Select')} /></SelectTrigger>
                 <SelectContent>
@@ -233,15 +277,20 @@ export default function NewPermitPage() {
         {/* Mobile-specific fields */}
         {permitType === 'mobile_phone' && (
           <section className="bg-card rounded-xl border border-border p-5">
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Smartphone className="w-5 h-5 text-primary" />{t('بيانات الجهاز', 'Device Details')}</h2>
+            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Smartphone className="w-5 h-5 text-primary" />{t('بيانات تصريح إدخال الجوال', 'Mobile Permit Details')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><Label className="text-sm">{t('نوع الجهاز / الموديل', 'Device Type / Model')} *</Label><Input value={mobile.deviceType} onChange={e => setMobile(p => ({ ...p, deviceType: e.target.value }))} /></div>
-              <div><Label className="text-sm">{t('IMEI', 'IMEI')}</Label><Input value={mobile.deviceImei || ''} onChange={e => setMobile(p => ({ ...p, deviceImei: e.target.value }))} /></div>
-              <div><Label className="text-sm">{t('الرقم التسلسلي', 'Serial Number')}</Label><Input value={mobile.serialNumber || ''} onChange={e => setMobile(p => ({ ...p, serialNumber: e.target.value }))} /></div>
-              <div></div>
-              <div><Label className="text-sm">{t('من تاريخ', 'From Date')} *</Label><Input type="date" value={mobile.requestedFrom} onChange={e => setMobile(p => ({ ...p, requestedFrom: e.target.value }))} /></div>
-              <div><Label className="text-sm">{t('إلى تاريخ', 'To Date')} *</Label><Input type="date" value={mobile.requestedTo} onChange={e => setMobile(p => ({ ...p, requestedTo: e.target.value }))} /></div>
-              <div className="md:col-span-2"><Label className="text-sm">{t('السبب / المبرر', 'Reason / Justification')} *</Label><Textarea value={mobile.reason} onChange={e => setMobile(p => ({ ...p, reason: e.target.value }))} rows={3} /></div>
+              <div><Label className="text-sm">{t('تاريخ الطلب', 'Request Date')} *</Label><Input type="date" value={mobile.requestDate} onChange={e => setMobile(p => ({ ...p, requestDate: e.target.value }))} /></div>
+              <div><Label className="text-sm">{t('نوع الجوال المراد إدخاله', 'Mobile Type to Enter')} *</Label><Input value={mobile.deviceType} onChange={e => setMobile(p => ({ ...p, deviceType: e.target.value }))} /></div>
+            </div>
+
+            <div className="mt-4 p-4 border border-amber-200 bg-amber-50 rounded-lg">
+              <p className="text-sm font-semibold text-amber-900 mb-1">{t('إقرار وتعهد', 'Declaration and Undertaking')}</p>
+              <p className="text-xs text-amber-800 leading-relaxed mb-2" dir="rtl">{mobileDeclAr}</p>
+              <p className="text-xs text-amber-800 leading-relaxed mb-3" dir="ltr">{mobileDeclEn}</p>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <Checkbox checked={mobile.declarationAccepted} onCheckedChange={v => setMobile(p => ({ ...p, declarationAccepted: !!v }))} />
+                <span className="text-sm font-medium text-amber-900">{t('أقر بالموافقة على ما ورد أعلاه', 'I agree to the above declaration')} *</span>
+              </label>
             </div>
           </section>
         )}
@@ -249,18 +298,18 @@ export default function NewPermitPage() {
         {/* Laptop-specific fields */}
         {permitType === 'laptop' && (
           <section className="bg-card rounded-xl border border-border p-5">
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Laptop className="w-5 h-5 text-primary" />{t('بيانات الكمبيوتر المحمول', 'Laptop Details')}</h2>
+            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Laptop className="w-5 h-5 text-primary" />{t('بيانات تصريح إدخال وخروج الكمبيوتر المحمول', 'Laptop Entry/Exit Permit Details')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><Label className="text-sm">{t('الماركة', 'Brand')} *</Label><Input value={laptop.laptopBrand} onChange={e => setLaptop(p => ({ ...p, laptopBrand: e.target.value }))} /></div>
+              <div><Label className="text-sm">{t('التاريخ من', 'Date From')} *</Label><Input type="date" value={laptop.requestedFrom} onChange={e => setLaptop(p => ({ ...p, requestedFrom: e.target.value }))} /></div>
+              <div><Label className="text-sm">{t('التاريخ إلى', 'Date To')} *</Label><Input type="date" value={laptop.requestedTo} onChange={e => setLaptop(p => ({ ...p, requestedTo: e.target.value }))} /></div>
+              <div><Label className="text-sm">{t('رقم البطاقة', 'ID Card Number')} *</Label><Input value={laptop.idCardNumber} onChange={e => setLaptop(p => ({ ...p, idCardNumber: e.target.value }))} /></div>
+              <div><Label className="text-sm">{t('نوع الجهاز المحمول', 'Laptop Type')} *</Label><Input value={laptop.laptopBrand} onChange={e => setLaptop(p => ({ ...p, laptopBrand: e.target.value }))} /></div>
               <div><Label className="text-sm">{t('الموديل', 'Model')}</Label><Input value={laptop.laptopModel} onChange={e => setLaptop(p => ({ ...p, laptopModel: e.target.value }))} /></div>
               <div><Label className="text-sm">{t('الرقم التسلسلي', 'Serial Number')} *</Label><Input value={laptop.serialNumber} onChange={e => setLaptop(p => ({ ...p, serialNumber: e.target.value }))} /></div>
-              <div><Label className="text-sm">{t('رقم الأصل', 'Asset Tag')}</Label><Input value={laptop.assetTag || ''} onChange={e => setLaptop(p => ({ ...p, assetTag: e.target.value }))} /></div>
-              <div><Label className="text-sm">{t('من تاريخ', 'From Date')} *</Label><Input type="date" value={laptop.requestedFrom} onChange={e => setLaptop(p => ({ ...p, requestedFrom: e.target.value }))} /></div>
-              <div><Label className="text-sm">{t('إلى تاريخ', 'To Date')} *</Label><Input type="date" value={laptop.requestedTo} onChange={e => setLaptop(p => ({ ...p, requestedTo: e.target.value }))} /></div>
-              <div className="md:col-span-2"><Label className="text-sm">{t('السبب / المبرر', 'Reason / Justification')} *</Label><Textarea value={laptop.reason} onChange={e => setLaptop(p => ({ ...p, reason: e.target.value }))} rows={3} /></div>
+              <div className="md:col-span-2"><Label className="text-sm">{t('رقم ملصق الفارابي', 'Farabi Sticker Number')} *</Label><Input value={laptop.farabiStickerNo} onChange={e => setLaptop(p => ({ ...p, farabiStickerNo: e.target.value }))} /></div>
             </div>
             <p className="text-xs text-muted-foreground mt-3 bg-muted/40 p-2 rounded">
-              {t('ستتم مراجعة الطلب من قسم تقنية المعلومات قبل إحالته للأمن الصناعي.', 'IT department will review before forwarding to Industrial Safety.')}
+              {t('سيتم توجيه الطلب إلى: مدير الإدارة ← قسم تقنية المعلومات ← رئيس قسم الأمن الصناعي.', 'Workflow: Department Manager → IT Department → Industrial Safety Chief.')}
             </p>
           </section>
         )}
@@ -268,43 +317,46 @@ export default function NewPermitPage() {
         {/* Photography-specific fields */}
         {permitType === 'photography' && (
           <section className="bg-card rounded-xl border border-border p-5">
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Camera className="w-5 h-5 text-primary" />{t('بيانات التصوير', 'Photography Details')}</h2>
+            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Camera className="w-5 h-5 text-primary" />{t('بيانات تصريح التصوير', 'Photography Permit Details')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><Label className="text-sm">{t('اسم المصور', 'Photographer Name')} *</Label><Input value={photography.photographerName} onChange={e => setPhotography(p => ({ ...p, photographerName: e.target.value }))} /></div>
-              <div><Label className="text-sm">{t('رقم الهوية / الإقامة', 'ID / Iqama')} *</Label><Input value={photography.photographerId} onChange={e => setPhotography(p => ({ ...p, photographerId: e.target.value }))} /></div>
-              <div><Label className="text-sm">{t('من تاريخ', 'From Date')} *</Label><Input type="date" value={photography.fromDate} onChange={e => setPhotography(p => ({ ...p, fromDate: e.target.value }))} /></div>
-              <div><Label className="text-sm">{t('إلى تاريخ', 'To Date')} *</Label><Input type="date" value={photography.toDate} onChange={e => setPhotography(p => ({ ...p, toDate: e.target.value }))} /></div>
-              <div><Label className="text-sm">{t('من ساعة', 'From Time')}</Label><Input type="time" value={photography.fromTime || ''} onChange={e => setPhotography(p => ({ ...p, fromTime: e.target.value }))} /></div>
-              <div><Label className="text-sm">{t('إلى ساعة', 'To Time')}</Label><Input type="time" value={photography.toTime || ''} onChange={e => setPhotography(p => ({ ...p, toTime: e.target.value }))} /></div>
-              <div className="md:col-span-2"><Label className="text-sm">{t('وصف معدات التصوير', 'Equipment Description')} *</Label><Input value={photography.equipmentDescription} onChange={e => setPhotography(p => ({ ...p, equipmentDescription: e.target.value }))} /></div>
-              <div className="md:col-span-2"><Label className="text-sm">{t('المواقع المراد تصويرها', 'Locations to Photograph')} *</Label><Textarea value={photography.locations} onChange={e => setPhotography(p => ({ ...p, locations: e.target.value }))} rows={2} /></div>
-              <div className="md:col-span-2"><Label className="text-sm">{t('الغرض من التصوير', 'Purpose of Photography')} *</Label><Textarea value={photography.purpose} onChange={e => setPhotography(p => ({ ...p, purpose: e.target.value }))} rows={3} /></div>
+              <div className="md:col-span-2"><Label className="text-sm">{t('نوع ورقم آلة التصوير', 'Camera Type & Number')} *</Label><Input value={photography.cameraTypeAndNumber} onChange={e => setPhotography(p => ({ ...p, cameraTypeAndNumber: e.target.value }))} /></div>
 
-              <div className="md:col-span-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                <label className="flex items-start gap-2 cursor-pointer">
-                  <Checkbox
-                    checked={photography.affectsMilitaryUnit}
-                    onCheckedChange={v => setPhotography(p => ({ ...p, affectsMilitaryUnit: !!v }))}
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-amber-900">
-                      {t('يؤثر التصوير على وحدة عسكرية مجاورة', 'Affects an adjacent military unit')}
-                    </p>
-                    <p className="text-xs text-amber-700 mt-1">
-                      {t(
-                        'في حال تأثر وحدة عسكرية مجاورة، يجب الحصول على تصريح من المحافظة وستقوم المحافظة بالتنسيق مع قيادة المنطقة العسكرية.',
-                        'If an adjacent military unit is affected, a permit from the Governorate is required (the Governorate coordinates with the military command).'
-                      )}
-                    </p>
-                  </div>
-                </label>
-                {photography.affectsMilitaryUnit && (
-                  <div className="mt-3">
-                    <Label className="text-sm">{t('مرجع تصريح المحافظة', 'Governorate Approval Reference')} *</Label>
-                    <Input value={photography.governorateApprovalRef || ''} onChange={e => setPhotography(p => ({ ...p, governorateApprovalRef: e.target.value }))} />
-                  </div>
-                )}
+              <div className="md:col-span-2">
+                <Label className="text-sm mb-2 block">{t('نوعية التصوير', 'Photography Type')} *</Label>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={photography.photographyType.video}
+                      onCheckedChange={v => setPhotography(p => ({ ...p, photographyType: { ...p.photographyType, video: !!v } }))}
+                    />
+                    <span className="text-sm">{t('فيديو', 'Video')}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={photography.photographyType.photoDigital}
+                      onCheckedChange={v => setPhotography(p => ({ ...p, photographyType: { ...p.photographyType, photoDigital: !!v } }))}
+                    />
+                    <span className="text-sm">{t('فوتوغرافي / رقمي', 'Photographic / Digital')}</span>
+                  </label>
+                </div>
               </div>
+
+              <div className="md:col-span-2"><Label className="text-sm">{t('المنطقة (الموقع/المباني) المطلوب تصويرها', 'Areas (Site/Buildings) to be Photographed')} *</Label><Textarea value={photography.locations} onChange={e => setPhotography(p => ({ ...p, locations: e.target.value }))} rows={2} /></div>
+            </div>
+
+            <div className="mt-4 p-4 border border-amber-200 bg-amber-50 rounded-lg">
+              <p className="text-sm font-semibold text-amber-900 mb-1">{t('إقرار وتعهد', 'Declaration and Undertaking')}</p>
+              <p className="text-xs text-amber-800 leading-relaxed mb-2" dir="rtl">{photoDeclAr}</p>
+              <p className="text-xs text-amber-800 leading-relaxed mb-3" dir="ltr">{photoDeclEn}</p>
+              <label className="flex items-start gap-2 cursor-pointer">
+                <Checkbox checked={photography.declarationAccepted} onCheckedChange={v => setPhotography(p => ({ ...p, declarationAccepted: !!v }))} />
+                <span className="text-sm font-medium text-amber-900">{t('أقر بالموافقة على ما ورد أعلاه', 'I agree to the above declaration')} *</span>
+              </label>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div><Label className="text-sm">{t('اسم المصور المخصص (الفارابي)', 'Designated Photographer Name (FYPC)')} *</Label><Input value={photography.photographerName} onChange={e => setPhotography(p => ({ ...p, photographerName: e.target.value }))} /></div>
+              <div><Label className="text-sm">{t('الوظيفة', 'Job Title')} *</Label><Input value={photography.photographerJobTitle} onChange={e => setPhotography(p => ({ ...p, photographerJobTitle: e.target.value }))} /></div>
             </div>
           </section>
         )}
