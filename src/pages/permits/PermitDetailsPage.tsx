@@ -10,8 +10,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Card, CardContent } from '@/components/ui/card';
 import {
-  ArrowLeft, Smartphone, Laptop, Camera, ShieldCheck, Check, X, Pause, Paperclip, Download, Shield, History, User as UserIcon,
+  ArrowLeft, Smartphone, Laptop, Camera, ShieldCheck, Check, X, Pause, Paperclip, Download, Shield, History, User as UserIcon, Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { toast } from '@/hooks/use-toast';
 import { canActOnPermit, canViewPermit, permitStatusLabel, permitTypeLabel } from '@/lib/permitAuthority';
 import { Department } from '@/types';
@@ -27,7 +31,7 @@ export default function PermitDetailsPage() {
   const navigate = useNavigate();
   const { language } = useLanguage();
   const { currentUser, getUserById } = useAuth();
-  const { getPermitById, approvePermit, rejectPermit, holdPermit } = usePermits();
+  const { getPermitById, approvePermit, rejectPermit, holdPermit, deletePermit } = usePermits();
   const { settings: companySettings } = useCompany();
   const t = (ar: string, en: string) => (language === 'ar' ? ar : en);
 
