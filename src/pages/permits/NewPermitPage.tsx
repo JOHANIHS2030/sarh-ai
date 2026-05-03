@@ -102,14 +102,14 @@ export default function NewPermitPage() {
       companyName: req.companyNameTel,
     }));
     if (permitType === 'laptop') {
-      setLaptop(p => ({ ...p, idCardNumber: req.idIqamaNumber || req.employeeId }));
+      setLaptop(p => ({ ...p, idCardNumber: req.nationalIdNo || req.employeeId }));
     }
     if (permitType === 'photography') {
       setPhotography(p => ({
         ...p,
         photographerName: language === 'ar' ? req.nameAr : req.nameEn,
         photographerJobTitle: req.jobTitle,
-        photographerId: req.idIqamaNumber || req.employeeId,
+        photographerId: req.nationalIdNo || req.employeeId,
       }));
     }
   };
