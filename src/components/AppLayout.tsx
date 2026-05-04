@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { NavLink } from '@/components/NavLink';
 import {
   LayoutDashboard, FilePlus, FileText, CheckSquare, LogOut, Globe, Shield,
-  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench, ShieldCheck
+  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench, ShieldCheck, BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationsBell from '@/components/NotificationsBell';
@@ -17,6 +18,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const { currentUser, logout } = useAuth();
   const { t, toggleLanguage, language } = useLanguage();
+  const { settings: companySettings } = useCompany();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
 
@@ -127,8 +129,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
         style={{ background: 'var(--gradient-hero)' }}
       >
         <div className="p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
-            <Shield className="w-5 h-5 text-accent-foreground" />
+          <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {companySettings.logo ? (
+              <img src={companySettings.logo} alt="logo" className="w-full h-full object-contain" />
+            ) : (
+              <Shield className="w-5 h-5 text-accent-foreground" />
+            )}
           </div>
           {sidebarOpen && (
             <div className="min-w-0">
