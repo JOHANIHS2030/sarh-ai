@@ -70,6 +70,9 @@ function AuthenticatedApp() {
         <Route path="/permits/all" element={<AllPermitsPage />} />
         <Route path="/permits/request/:id" element={<PermitDetailsPage />} />
 
+        {/* Admin Reports */}
+        <Route path="/reports/:domain/:bucket" element={<ReportsHubPage />} />
+
         <Route path="/settings/users" element={<UsersSettingsPage />} />
         <Route path="/settings/external-users" element={<ExternalUsersSettingsPage />} />
         <Route path="/settings/departments" element={<DepartmentsSettingsPage />} />
