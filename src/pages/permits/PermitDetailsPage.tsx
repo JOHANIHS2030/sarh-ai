@@ -386,6 +386,23 @@ export default function PermitDetailsPage() {
               <Textarea value={reason} onChange={e => setReason(e.target.value)} rows={4} />
             </div>
           )}
+          {actionDialog === 'approve' && nextPermitStatus(permit.permitType, permit.status) === 'approved' && (
+            <div className="space-y-2 bg-success/5 border border-success/30 rounded-md p-3">
+              <p className="text-xs font-semibold text-success">
+                {t('بيانات صلاحية التصريح (إلزامي عند الموافقة النهائية)', 'Permit validity (required at final approval)')}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">{t('من تاريخ', 'Valid From')}</Label>
+                  <Input type="date" value={validityFrom} onChange={e => setValidityFrom(e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">{t('إلى تاريخ', 'Valid Until')} <span className="text-destructive">*</span></Label>
+                  <Input type="date" value={validityExpiry} onChange={e => setValidityExpiry(e.target.value)} />
+                </div>
+              </div>
+            </div>
+          )}
           {actionDialog === 'approve' && (
             <p className="text-xs text-muted-foreground bg-muted/40 p-2 rounded">
               {t('سيتم تسجيل اسمك وتوقيعك في هذه المرحلة وإرسال الطلب إلى المرحلة التالية.', 'Your name and signature will be recorded and the request moves to the next stage.')}
