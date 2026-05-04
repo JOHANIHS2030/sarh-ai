@@ -23,6 +23,9 @@ import { initialDepartments } from '@/data/departments';
 import { readLocalJSON } from '@/lib/browserStorage';
 import { PermitStageApproval } from '@/types/permit';
 import { generatePermitPDF } from '@/lib/permitPdfGenerator';
+import { nextPermitStatus } from '@/contexts/PermitsContext';
+import { computeExpiry, expiryBadgeClasses, expiryLabel } from '@/lib/expiryStatus';
+import { Input } from '@/components/ui/input';
 
 const typeIcons = { mobile_phone: Smartphone, laptop: Laptop, photography: Camera };
 
@@ -43,6 +46,8 @@ export default function PermitDetailsPage() {
 
   const [actionDialog, setActionDialog] = useState<'approve' | 'reject' | 'hold' | null>(null);
   const [reason, setReason] = useState('');
+  const [validityFrom, setValidityFrom] = useState(new Date().toISOString().slice(0, 10));
+  const [validityExpiry, setValidityExpiry] = useState('');
 
   if (!permit) {
     return (
