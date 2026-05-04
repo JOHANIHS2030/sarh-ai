@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useCompany } from '@/contexts/CompanyContext';
 import { NavLink } from '@/components/NavLink';
 import {
   LayoutDashboard, FilePlus, FileText, CheckSquare, LogOut, Globe, Shield,
-  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench, ShieldCheck
+  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench, ShieldCheck, BarChart3
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationsBell from '@/components/NotificationsBell';
@@ -17,6 +18,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children }: AppLayoutProps) {
   const { currentUser, logout } = useAuth();
   const { t, toggleLanguage, language } = useLanguage();
+  const { settings: companySettings } = useCompany();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
 
@@ -63,6 +65,29 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { to: '/settings/company', icon: Settings, label: language === 'ar' ? 'إعدادات الشركة' : 'Company Settings', show: isAdmin },
   ];
 
+  const reportsItems: NavItem[] = [
+    { to: '/reports/idcards/all',      icon: FileText, label: language === 'ar' ? 'بطاقات الهوية — الكل' : 'ID Cards — All', show: isAdmin },
+    { to: '/reports/idcards/issued',   icon: FileText, label: language === 'ar' ? 'بطاقات الهوية الصادرة' : 'ID Cards — Issued', show: isAdmin },
+    { to: '/reports/idcards/pending',  icon: FileText, label: language === 'ar' ? 'بطاقات الهوية المعلقة' : 'ID Cards — On Hold', show: isAdmin },
+    { to: '/reports/idcards/rejected', icon: FileText, label: language === 'ar' ? 'بطاقات الهوية المرفوضة' : 'ID Cards — Rejected', show: isAdmin },
+    { to: '/reports/stickers/all',      icon: FileText, label: language === 'ar' ? 'ملصقات المركبات — الكل' : 'Stickers — All', show: isAdmin },
+    { to: '/reports/stickers/issued',   icon: FileText, label: language === 'ar' ? 'ملصقات المركبات الصادرة' : 'Stickers — Issued', show: isAdmin },
+    { to: '/reports/stickers/pending',  icon: FileText, label: language === 'ar' ? 'ملصقات المركبات المعلقة' : 'Stickers — On Hold', show: isAdmin },
+    { to: '/reports/stickers/rejected', icon: FileText, label: language === 'ar' ? 'ملصقات المركبات المرفوضة' : 'Stickers — Rejected', show: isAdmin },
+    { to: '/reports/mobile/all',      icon: FileText, label: language === 'ar' ? 'تصاريح الجوال — الكل' : 'Mobile — All', show: isAdmin },
+    { to: '/reports/mobile/issued',   icon: FileText, label: language === 'ar' ? 'تصاريح الجوال الصادرة' : 'Mobile — Issued', show: isAdmin },
+    { to: '/reports/mobile/pending',  icon: FileText, label: language === 'ar' ? 'تصاريح الجوال المعلقة' : 'Mobile — On Hold', show: isAdmin },
+    { to: '/reports/mobile/rejected', icon: FileText, label: language === 'ar' ? 'تصاريح الجوال المرفوضة' : 'Mobile — Rejected', show: isAdmin },
+    { to: '/reports/laptop/all',      icon: FileText, label: language === 'ar' ? 'تصاريح الكمبيوتر — الكل' : 'Laptop — All', show: isAdmin },
+    { to: '/reports/laptop/issued',   icon: FileText, label: language === 'ar' ? 'تصاريح الكمبيوتر الصادرة' : 'Laptop — Issued', show: isAdmin },
+    { to: '/reports/laptop/pending',  icon: FileText, label: language === 'ar' ? 'تصاريح الكمبيوتر المعلقة' : 'Laptop — On Hold', show: isAdmin },
+    { to: '/reports/laptop/rejected', icon: FileText, label: language === 'ar' ? 'تصاريح الكمبيوتر المرفوضة' : 'Laptop — Rejected', show: isAdmin },
+    { to: '/reports/photography/all',      icon: FileText, label: language === 'ar' ? 'تصاريح التصوير — الكل' : 'Photography — All', show: isAdmin },
+    { to: '/reports/photography/issued',   icon: FileText, label: language === 'ar' ? 'تصاريح التصوير الصادرة' : 'Photography — Issued', show: isAdmin },
+    { to: '/reports/photography/pending',  icon: FileText, label: language === 'ar' ? 'تصاريح التصوير المعلقة' : 'Photography — On Hold', show: isAdmin },
+    { to: '/reports/photography/rejected', icon: FileText, label: language === 'ar' ? 'تصاريح التصوير المرفوضة' : 'Photography — Rejected', show: isAdmin },
+  ];
+
   const groups: NavGroup[] = [
     {
       id: 'idcards',
@@ -87,6 +112,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
       labelEn: 'Permit Issuance System',
       items: permitItems.filter(i => i.show),
       show: permitItems.some(i => i.show),
+    },
+    {
+      id: 'reports',
+      icon: BarChart3,
+      labelAr: 'السجلات والتقارير',
+      labelEn: 'Reports & Records',
+      items: reportsItems.filter(i => i.show),
+      show: isAdmin,
     },
     {
       id: 'admin',
@@ -127,8 +160,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
         style={{ background: 'var(--gradient-hero)' }}
       >
         <div className="p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
-            <Shield className="w-5 h-5 text-accent-foreground" />
+          <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {companySettings.logo ? (
+              <img src={companySettings.logo} alt="logo" className="w-full h-full object-contain" />
+            ) : (
+              <Shield className="w-5 h-5 text-accent-foreground" />
+            )}
           </div>
           {sidebarOpen && (
             <div className="min-w-0">

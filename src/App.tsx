@@ -36,6 +36,7 @@ import MyPermitsPage from "@/pages/permits/MyPermitsPage";
 import PermitPendingApprovalsPage from "@/pages/permits/PermitPendingApprovalsPage";
 import AllPermitsPage from "@/pages/permits/AllPermitsPage";
 import PermitDetailsPage from "@/pages/permits/PermitDetailsPage";
+import ReportsHubPage from "@/pages/reports/ReportsHubPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,6 +69,9 @@ function AuthenticatedApp() {
         <Route path="/permits/pending" element={<PermitPendingApprovalsPage />} />
         <Route path="/permits/all" element={<AllPermitsPage />} />
         <Route path="/permits/request/:id" element={<PermitDetailsPage />} />
+
+        {/* Admin Reports */}
+        <Route path="/reports/:domain/:bucket" element={<ReportsHubPage />} />
 
         <Route path="/settings/users" element={<UsersSettingsPage />} />
         <Route path="/settings/external-users" element={<ExternalUsersSettingsPage />} />

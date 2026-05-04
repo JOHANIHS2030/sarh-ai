@@ -23,6 +23,9 @@ import { initialDepartments } from '@/data/departments';
 import { readLocalJSON } from '@/lib/browserStorage';
 import { PermitStageApproval } from '@/types/permit';
 import { generatePermitPDF } from '@/lib/permitPdfGenerator';
+import { nextPermitStatus } from '@/contexts/PermitsContext';
+import { computeExpiry, expiryBadgeClasses, expiryLabel } from '@/lib/expiryStatus';
+import { Input } from '@/components/ui/input';
 
 const typeIcons = { mobile_phone: Smartphone, laptop: Laptop, photography: Camera };
 
@@ -43,6 +46,8 @@ export default function PermitDetailsPage() {
 
   const [actionDialog, setActionDialog] = useState<'approve' | 'reject' | 'hold' | null>(null);
   const [reason, setReason] = useState('');
+  const [validityFrom, setValidityFrom] = useState(new Date().toISOString().slice(0, 10));
+  const [validityExpiry, setValidityExpiry] = useState('');
 
   if (!permit) {
     return (
@@ -82,6 +87,11 @@ export default function PermitDetailsPage() {
     }
 
     if (actionDialog === 'approve') {
+      const willBecomeApproved = nextPermitStatus(permit.permitType, permit.status) === 'approved';
+      if (willBecomeApproved && !validityExpiry) {
+        toast({ title: t('يرجى إدخال تاريخ انتهاء صلاحية التصريح', 'Please enter the permit expiry date'), variant: 'destructive' });
+        return;
+      }
       const approval: PermitStageApproval = {
         stage: permit.status,
         approverUserId: currentUser.id,
@@ -91,7 +101,13 @@ export default function PermitDetailsPage() {
         signature: currentUser.signature,
         approvedAt: new Date().toISOString(),
       };
-      approvePermit(permit.id, currentUser.id, approval, reason.trim() || undefined);
+      approvePermit(
+        permit.id,
+        currentUser.id,
+        approval,
+        reason.trim() || undefined,
+        willBecomeApproved ? { validityFrom, validityExpiry } : undefined
+      );
       toast({ title: t('تمت الموافقة على الطلب', 'Request approved') });
     } else if (actionDialog === 'reject') {
       rejectPermit(permit.id, currentUser.id, reason);
@@ -185,7 +201,22 @@ export default function PermitDetailsPage() {
             <div>
               <h1 className="text-lg font-bold text-primary-foreground">{permitTypeLabel(permit.permitType, language)}</h1>
               <p className="text-primary-foreground/80 text-sm">{permit.applicant.name}</p>
+      </div>
+
+      {/* Validity badge — visible whenever the permit is approved */}
+      {permit.status === 'approved' && permit.validityExpiry && (() => {
+        const info = computeExpiry(permit.validityExpiry);
+        return (
+          <div className={`rounded-xl px-4 py-3 text-sm font-medium ${expiryBadgeClasses(info.status)}`}>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span>{expiryLabel(info, language)}</span>
+              <span className="text-xs">
+                {t('من', 'From')} {permit.validityFrom || '—'} {t('إلى', 'to')} {permit.validityExpiry}
+              </span>
             </div>
+          </div>
+        );
+      })()}
           </div>
           <div className="text-end">
             <p className="text-primary-foreground/70 text-xs">{t('رقم الطلب', 'Request No.')}</p>
@@ -368,6 +399,23 @@ export default function PermitDetailsPage() {
                   : <>{t('السبب', 'Reason')} <span className="text-destructive">*</span></>}
               </Label>
               <Textarea value={reason} onChange={e => setReason(e.target.value)} rows={4} />
+            </div>
+          )}
+          {actionDialog === 'approve' && nextPermitStatus(permit.permitType, permit.status) === 'approved' && (
+            <div className="space-y-2 bg-success/5 border border-success/30 rounded-md p-3">
+              <p className="text-xs font-semibold text-success">
+                {t('بيانات صلاحية التصريح (إلزامي عند الموافقة النهائية)', 'Permit validity (required at final approval)')}
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs">{t('من تاريخ', 'Valid From')}</Label>
+                  <Input type="date" value={validityFrom} onChange={e => setValidityFrom(e.target.value)} />
+                </div>
+                <div>
+                  <Label className="text-xs">{t('إلى تاريخ', 'Valid Until')} <span className="text-destructive">*</span></Label>
+                  <Input type="date" value={validityExpiry} onChange={e => setValidityExpiry(e.target.value)} />
+                </div>
+              </div>
             </div>
           )}
           {actionDialog === 'approve' && (

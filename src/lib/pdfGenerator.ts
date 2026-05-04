@@ -44,22 +44,24 @@ async function renderHtmlToPdf(html: string, fileName: string) {
   container.innerHTML = html;
   document.body.appendChild(container);
 
-  // Preload Arabic & Latin fonts at the weights we use, then wait for them to be ready.
-  // This prevents html2canvas from snapshotting the page before Cairo has loaded —
-  // which is the usual cause of Arabic letters rendering disconnected/garbled.
+  // Cairo is bundled via @fontsource/cairo (imported in main.tsx).
+  // Force-load each weight against actual Arabic text so the browser
+  // resolves the font BEFORE html2canvas snapshots the DOM. This is the fix
+  // for Arabic letters appearing disconnected/garbled in generated PDFs.
   try {
-    const fontsToLoad = [
-      '400 14px "Cairo"',
-      '600 14px "Cairo"',
-      '700 14px "Cairo"',
-      '400 14px "Inter"',
-      '600 14px "Inter"',
-      '700 14px "Inter"',
-    ];
-    await Promise.all(fontsToLoad.map(f => (document as any).fonts.load(f, 'النموذج Form')));
+    const sample = 'النموذج العربي ABC 123';
+    const weights = ['400', '600', '700'];
+    await Promise.all(
+      weights.flatMap(w => [
+        (document as any).fonts.load(`${w} 14px "Cairo"`, sample),
+        (document as any).fonts.load(`${w} 14px "Inter"`, sample),
+      ])
+    );
     await (document as any).fonts.ready;
+    // small extra tick — gives the browser time to apply shaping
+    await new Promise(r => setTimeout(r, 50));
   } catch {
-    // ignore — fall back to system fonts
+    /* ignore — fall back to system fonts */
   }
 
   // Wait for images to load
@@ -132,14 +134,16 @@ export async function generateRequestPDF({
 
   const styles = `
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=Inter:wght@400;600;700&display=swap');
       * { box-sizing: border-box; margin: 0; padding: 0; }
       .pdf-page {
         width: 794px;
         min-height: 1123px;
         padding: 32px 36px;
         background: #fff;
-        font-family: ${isAr ? "'Cairo'" : "'Inter'"}, system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+        font-family: 'Cairo', 'Noto Naskh Arabic', 'Segoe UI', Tahoma, sans-serif;
+        font-feature-settings: "kern", "liga", "calt";
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
         color: #1a1a1a;
         direction: ${dir};
         page-break-after: always;

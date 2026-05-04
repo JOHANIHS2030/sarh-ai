@@ -132,4 +132,9 @@ export interface PermitRequest {
   stageApprovals: PermitStageApproval[];
   holdReason?: string;
   rejectReason?: string;
+  // Validity / expiry — entered manually at final approval (issuance).
+  // Used for status colors (blue/orange/red) and admin notifications.
+  validityFrom?: string;     // ISO date
+  validityExpiry?: string;   // ISO date
+  issuedAt?: string;         // ISO timestamp when permit reached "approved" with expiry set
 }

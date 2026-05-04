@@ -42,9 +42,16 @@ async function renderHtmlToPdf(html: string, fileName: string) {
   document.body.appendChild(container);
 
   try {
-    const fonts = ['400 14px "Cairo"', '600 14px "Cairo"', '700 14px "Cairo"', '400 14px "Inter"', '700 14px "Inter"'];
-    await Promise.all(fonts.map(f => (document as any).fonts.load(f, 'النموذج Form')));
+    const sample = 'النموذج العربي ABC 123';
+    const weights = ['400', '600', '700'];
+    await Promise.all(
+      weights.flatMap(w => [
+        (document as any).fonts.load(`${w} 14px "Cairo"`, sample),
+        (document as any).fonts.load(`${w} 14px "Inter"`, sample),
+      ])
+    );
     await (document as any).fonts.ready;
+    await new Promise(r => setTimeout(r, 50));
   } catch { /* ignore */ }
 
   const imgs = Array.from(container.querySelectorAll('img'));
@@ -88,7 +95,8 @@ export async function generatePermitPDF({
   const styles = `<style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     .pdf-page { width: 794px; min-height: 1123px; padding: 32px 36px; background: #fff;
-      font-family: ${isAr ? "'Cairo'" : "'Inter'"}, system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+      font-family: 'Cairo', 'Noto Naskh Arabic', 'Segoe UI', Tahoma, sans-serif;
+      font-feature-settings: "kern", "liga", "calt"; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
       color: #1a1a1a; direction: ${dir}; page-break-after: always; position: relative; }
     .brand-bar { height: 5px; background: #1a365d; margin: -32px -36px 0; }
     .gold-bar  { height: 2px; background: #b8860b; margin: 0 -36px 16px; }
