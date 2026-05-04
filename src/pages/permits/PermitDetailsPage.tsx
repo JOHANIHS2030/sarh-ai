@@ -201,7 +201,22 @@ export default function PermitDetailsPage() {
             <div>
               <h1 className="text-lg font-bold text-primary-foreground">{permitTypeLabel(permit.permitType, language)}</h1>
               <p className="text-primary-foreground/80 text-sm">{permit.applicant.name}</p>
+      </div>
+
+      {/* Validity badge — visible whenever the permit is approved */}
+      {permit.status === 'approved' && permit.validityExpiry && (() => {
+        const info = computeExpiry(permit.validityExpiry);
+        return (
+          <div className={`rounded-xl px-4 py-3 text-sm font-medium ${expiryBadgeClasses(info.status)}`}>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span>{expiryLabel(info, language)}</span>
+              <span className="text-xs">
+                {t('من', 'From')} {permit.validityFrom || '—'} {t('إلى', 'to')} {permit.validityExpiry}
+              </span>
             </div>
+          </div>
+        );
+      })()}
           </div>
           <div className="text-end">
             <p className="text-primary-foreground/70 text-xs">{t('رقم الطلب', 'Request No.')}</p>
