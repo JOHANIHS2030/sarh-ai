@@ -36,6 +36,7 @@ import MyPermitsPage from "@/pages/permits/MyPermitsPage";
 import PermitPendingApprovalsPage from "@/pages/permits/PermitPendingApprovalsPage";
 import AllPermitsPage from "@/pages/permits/AllPermitsPage";
 import PermitDetailsPage from "@/pages/permits/PermitDetailsPage";
+import ReportsHubPage from "@/pages/reports/ReportsHubPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
