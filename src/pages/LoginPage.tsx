@@ -52,15 +52,19 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center z-10 p-4">
         <div className="w-full max-w-md">
           <div className="bg-card rounded-2xl shadow-elevated p-8 backdrop-blur-sm border border-border/50">
-            {/* Logo/Header */}
+            {/* Logo/Header — show company logo only when configured; otherwise fallback shield */}
             <div className="text-center mb-8">
-              <div className="w-16 h-16 gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg overflow-hidden">
-                {settings.logo ? (
-                  <img src={settings.logo} alt="logo" className="w-full h-full object-contain p-1" />
-                ) : (
+              {settings.logo ? (
+                <img
+                  src={settings.logo}
+                  alt={language === 'ar' ? settings.nameAr : settings.nameEn}
+                  className="mx-auto mb-4 max-h-24 w-auto object-contain"
+                />
+              ) : (
+                <div className="w-16 h-16 gradient-primary rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                   <Shield className="w-8 h-8 text-primary-foreground" />
-                )}
-              </div>
+                </div>
+              )}
               <h1 className="text-2xl font-bold text-foreground">{language === 'ar' ? settings.nameAr : settings.nameEn}</h1>
               <p className="text-muted-foreground mt-1 text-sm">{t('appTitle')}</p>
             </div>
