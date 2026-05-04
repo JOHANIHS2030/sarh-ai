@@ -37,6 +37,45 @@ export default function ReportsHubPage() {
   const { stickers } = useVehicleStickers();
   const { permits } = usePermits();
 
+  const validDomain = domain && TITLES[domain] ? domain : null;
+  const validBucket = bucket && BUCKETS[bucket] ? bucket : null;
+
+  // Compute filtered slices for all domains unconditionally (Hook rules)
+  const idcardsFiltered = useMemo(() => {
+    if (!validBucket) return [];
+    switch (validBucket) {
+      case 'issued':   return requests.filter(r => r.status === 'approved');
+      case 'pending':  return requests.filter(r => r.status === 'on_hold');
+      case 'rejected': return requests.filter(r => r.status === 'rejected');
+      default:         return requests;
+    }
+  }, [requests, validBucket]);
+
+  const stickersFiltered = useMemo(() => {
+    if (!validBucket) return [];
+    switch (validBucket) {
+      case 'issued':   return stickers.filter(s => s.status === 'approved');
+      case 'pending':  return stickers.filter(s => s.status === 'on_hold');
+      case 'rejected': return stickers.filter(s => s.status === 'rejected');
+      default:         return stickers;
+    }
+  }, [stickers, validBucket]);
+
+  const permitTypeForDomain = validDomain === 'mobile' ? 'mobile_phone'
+    : validDomain === 'laptop' ? 'laptop'
+    : validDomain === 'photography' ? 'photography' : null;
+
+  const permitsFiltered = useMemo(() => {
+    if (!validBucket || !permitTypeForDomain) return [];
+    const base = permits.filter(p => p.permitType === permitTypeForDomain);
+    switch (validBucket) {
+      case 'issued':   return base.filter(p => p.status === 'approved');
+      case 'pending':  return base.filter(p => p.status === 'on_hold');
+      case 'rejected': return base.filter(p => p.status === 'rejected');
+      default:         return base;
+    }
+  }, [permits, validBucket, permitTypeForDomain]);
+
   // Admin-only
   if (!currentUser || currentUser.role !== 'admin') {
     return (
@@ -52,26 +91,13 @@ export default function ReportsHubPage() {
     );
   }
 
-  if (!domain || !bucket || !TITLES[domain] || !BUCKETS[bucket]) {
-    return <Navigate to="/" replace />;
-  }
+  if (!validDomain || !validBucket) return <Navigate to="/" replace />;
 
-  const title = `${BUCKETS[bucket][language]} — ${TITLES[domain][language]}`;
-  const fileBase = `${domain}-${bucket}`;
+  const title = `${BUCKETS[validBucket][language]} — ${TITLES[validDomain][language]}`;
+  const fileBase = `${validDomain}-${validBucket}`;
+  const showExpiryCol = validBucket === 'issued' || validBucket === 'all';
 
-  // ===== Build per-domain content =====
-  let content: JSX.Element | null = null;
-
-  if (domain === 'idcards') {
-    const filtered = useMemo(() => {
-      switch (bucket) {
-        case 'issued':   return requests.filter(r => r.status === 'approved');
-        case 'pending':  return requests.filter(r => r.status === 'on_hold');
-        case 'rejected': return requests.filter(r => r.status === 'rejected');
-        default:         return requests;
-      }
-    }, [requests, bucket]);
-
+  if (validDomain === 'idcards') {
     const cols: ReportColumn<typeof requests[number]>[] = [
       { key: 'no',     header: isAr ? 'رقم الطلب' : 'Request No.', accessor: r => r.requestNumber },
       { key: 'name',   header: isAr ? 'الاسم' : 'Name',            accessor: r => isAr ? r.nameAr : r.nameEn },
@@ -83,30 +109,22 @@ export default function ReportsHubPage() {
       { key: 'exp',    header: isAr ? 'تاريخ الانتهاء' : 'Expiry', accessor: r => r.issuance?.expiryDate || '—' },
       { key: 'date',   header: isAr ? 'تاريخ التقديم' : 'Submitted', accessor: r => new Date(r.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB') },
     ];
-
-    content = (
+    return (
       <ReportTablePage
         title={title}
-        rows={filtered}
+        rows={idcardsFiltered}
         columns={cols}
         fileBaseName={fileBase}
-        showExpiryColumn={bucket === 'issued' || bucket === 'all'}
+        showExpiryColumn={showExpiryCol}
         rowMeta={r => ({
           href: `/request/${r.id}`,
           expiry: r.issuance?.expiryDate ? computeExpiry(r.issuance.expiryDate) : undefined,
         })}
       />
     );
-  } else if (domain === 'stickers') {
-    const filtered = useMemo(() => {
-      switch (bucket) {
-        case 'issued':   return stickers.filter(s => s.status === 'approved');
-        case 'pending':  return stickers.filter(s => s.status === 'on_hold');
-        case 'rejected': return stickers.filter(s => s.status === 'rejected');
-        default:         return stickers;
-      }
-    }, [stickers, bucket]);
+  }
 
+  if (validDomain === 'stickers') {
     const cols: ReportColumn<typeof stickers[number]>[] = [
       { key: 'no',     header: isAr ? 'رقم الطلب' : 'Request No.',  accessor: s => s.requestNumber },
       { key: 'driver', header: isAr ? 'اسم السائق' : 'Driver',       accessor: s => s.driver.name },
@@ -118,57 +136,42 @@ export default function ReportsHubPage() {
       { key: 'exp',    header: isAr ? 'تاريخ الانتهاء' : 'Expiry',   accessor: s => s.securityIssuance?.expiryDate || '—' },
       { key: 'date',   header: isAr ? 'تاريخ التقديم' : 'Submitted', accessor: s => new Date(s.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB') },
     ];
-
-    content = (
+    return (
       <ReportTablePage
         title={title}
-        rows={filtered}
+        rows={stickersFiltered}
         columns={cols}
         fileBaseName={fileBase}
-        showExpiryColumn={bucket === 'issued' || bucket === 'all'}
+        showExpiryColumn={showExpiryCol}
         rowMeta={s => ({
           href: `/stickers/request/${s.id}`,
           expiry: s.securityIssuance?.expiryDate ? computeExpiry(s.securityIssuance.expiryDate) : undefined,
         })}
       />
     );
-  } else {
-    // Permit domains
-    const permitType = domain === 'mobile' ? 'mobile_phone' : domain === 'laptop' ? 'laptop' : 'photography';
-    const filtered = useMemo(() => {
-      const base = permits.filter(p => p.permitType === permitType);
-      switch (bucket) {
-        case 'issued':   return base.filter(p => p.status === 'approved');
-        case 'pending':  return base.filter(p => p.status === 'on_hold');
-        case 'rejected': return base.filter(p => p.status === 'rejected');
-        default:         return base;
-      }
-    }, [permits, bucket, permitType]);
-
-    const cols: ReportColumn<typeof permits[number]>[] = [
-      { key: 'no',    header: isAr ? 'رقم الطلب' : 'Request No.',  accessor: p => p.requestNumber },
-      { key: 'name',  header: isAr ? 'الاسم' : 'Name',              accessor: p => p.applicant.name },
-      { key: 'emp',   header: isAr ? 'الرقم الوظيفي' : 'Emp. ID',   accessor: p => p.applicant.employeeId },
-      { key: 'job',   header: isAr ? 'الوظيفة' : 'Job',             accessor: p => p.applicant.jobTitle },
-      { key: 'from',  header: isAr ? 'من' : 'From',                 accessor: p => p.validityFrom || '—' },
-      { key: 'exp',   header: isAr ? 'تاريخ الانتهاء' : 'Expiry',   accessor: p => p.validityExpiry || '—' },
-      { key: 'date',  header: isAr ? 'تاريخ التقديم' : 'Submitted', accessor: p => new Date(p.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB') },
-    ];
-
-    content = (
-      <ReportTablePage
-        title={title}
-        rows={filtered}
-        columns={cols}
-        fileBaseName={fileBase}
-        showExpiryColumn={bucket === 'issued' || bucket === 'all'}
-        rowMeta={p => ({
-          href: `/permits/request/${p.id}`,
-          expiry: p.validityExpiry ? computeExpiry(p.validityExpiry) : undefined,
-        })}
-      />
-    );
   }
 
-  return content;
+  // Permit domain
+  const cols: ReportColumn<typeof permits[number]>[] = [
+    { key: 'no',    header: isAr ? 'رقم الطلب' : 'Request No.',  accessor: p => p.requestNumber },
+    { key: 'name',  header: isAr ? 'الاسم' : 'Name',              accessor: p => p.applicant.name },
+    { key: 'emp',   header: isAr ? 'الرقم الوظيفي' : 'Emp. ID',   accessor: p => p.applicant.employeeId },
+    { key: 'job',   header: isAr ? 'الوظيفة' : 'Job',             accessor: p => p.applicant.jobTitle },
+    { key: 'from',  header: isAr ? 'من' : 'From',                 accessor: p => p.validityFrom || '—' },
+    { key: 'exp',   header: isAr ? 'تاريخ الانتهاء' : 'Expiry',   accessor: p => p.validityExpiry || '—' },
+    { key: 'date',  header: isAr ? 'تاريخ التقديم' : 'Submitted', accessor: p => new Date(p.createdAt).toLocaleDateString(isAr ? 'ar-SA' : 'en-GB') },
+  ];
+  return (
+    <ReportTablePage
+      title={title}
+      rows={permitsFiltered}
+      columns={cols}
+      fileBaseName={fileBase}
+      showExpiryColumn={showExpiryCol}
+      rowMeta={p => ({
+        href: `/permits/request/${p.id}`,
+        expiry: p.validityExpiry ? computeExpiry(p.validityExpiry) : undefined,
+      })}
+    />
+  );
 }
