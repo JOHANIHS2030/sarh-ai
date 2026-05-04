@@ -44,18 +44,18 @@ async function renderHtmlToPdf(html: string, fileName: string) {
   container.innerHTML = html;
   document.body.appendChild(container);
 
-  // Ensure fonts are loaded before snapshotting (fixes broken Arabic glyphs)
+  // Cairo bundled locally — load each weight against Arabic text before snapshot
   try {
-    const fontsToLoad = [
-      '400 14px "Cairo"',
-      '600 14px "Cairo"',
-      '700 14px "Cairo"',
-      '400 14px "Inter"',
-      '600 14px "Inter"',
-      '700 14px "Inter"',
-    ];
-    await Promise.all(fontsToLoad.map(f => (document as any).fonts.load(f, 'النموذج Form')));
+    const sample = 'النموذج العربي ABC 123';
+    const weights = ['400', '600', '700'];
+    await Promise.all(
+      weights.flatMap(w => [
+        (document as any).fonts.load(`${w} 14px "Cairo"`, sample),
+        (document as any).fonts.load(`${w} 14px "Inter"`, sample),
+      ])
+    );
     await (document as any).fonts.ready;
+    await new Promise(r => setTimeout(r, 50));
   } catch {
     /* ignore */
   }
@@ -131,7 +131,10 @@ export async function generateStickerPDF({
         min-height: 1123px;
         padding: 32px 36px;
         background: #fff;
-        font-family: ${isAr ? "'Cairo'" : "'Inter'"}, system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+        font-family: 'Cairo', 'Noto Naskh Arabic', 'Segoe UI', Tahoma, sans-serif;
+        font-feature-settings: "kern", "liga", "calt";
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
         color: #1a1a1a;
         direction: ${dir};
         page-break-after: always;
