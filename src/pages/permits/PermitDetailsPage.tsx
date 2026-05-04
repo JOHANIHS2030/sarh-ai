@@ -87,6 +87,11 @@ export default function PermitDetailsPage() {
     }
 
     if (actionDialog === 'approve') {
+      const willBecomeApproved = nextPermitStatus(permit.permitType, permit.status) === 'approved';
+      if (willBecomeApproved && !validityExpiry) {
+        toast({ title: t('يرجى إدخال تاريخ انتهاء صلاحية التصريح', 'Please enter the permit expiry date'), variant: 'destructive' });
+        return;
+      }
       const approval: PermitStageApproval = {
         stage: permit.status,
         approverUserId: currentUser.id,
@@ -96,7 +101,13 @@ export default function PermitDetailsPage() {
         signature: currentUser.signature,
         approvedAt: new Date().toISOString(),
       };
-      approvePermit(permit.id, currentUser.id, approval, reason.trim() || undefined);
+      approvePermit(
+        permit.id,
+        currentUser.id,
+        approval,
+        reason.trim() || undefined,
+        willBecomeApproved ? { validityFrom, validityExpiry } : undefined
+      );
       toast({ title: t('تمت الموافقة على الطلب', 'Request approved') });
     } else if (actionDialog === 'reject') {
       rejectPermit(permit.id, currentUser.id, reason);
