@@ -42,7 +42,7 @@ interface PermitsContextType {
       'id' | 'requestNumber' | 'status' | 'createdAt' | 'updatedAt' | 'approvalHistory' | 'stageApprovals'
     >
   ) => PermitRequest;
-  approvePermit: (id: string, userId: string, approval: PermitStageApproval, notes?: string) => void;
+  approvePermit: (id: string, userId: string, approval: PermitStageApproval, notes?: string, validity?: { validityFrom?: string; validityExpiry?: string }) => void;
   rejectPermit: (id: string, userId: string, reason: string) => void;
   holdPermit: (id: string, userId: string, reason: string) => void;
   deletePermit: (id: string, userId: string) => void;
@@ -107,7 +107,7 @@ export function PermitsProvider({ children }: { children: React.ReactNode }) {
   );
 
   const approvePermit = useCallback(
-    (id: string, userId: string, approval: PermitStageApproval, notes?: string) => {
+    (id: string, userId: string, approval: PermitStageApproval, notes?: string, validity?: { validityFrom?: string; validityExpiry?: string }) => {
       let requestNumber = '';
       const updated = permits.map(p => {
         if (p.id !== id) return p;
@@ -121,12 +121,17 @@ export function PermitsProvider({ children }: { children: React.ReactNode }) {
           timestamp: new Date().toISOString(),
           stage: p.status,
         };
+        const becomingApproved = next === 'approved';
         return {
           ...p,
           status: next,
           updatedAt: new Date().toISOString(),
           approvalHistory: [...p.approvalHistory, action],
           stageApprovals: [...p.stageApprovals, { ...approval, stage: p.status, notes }],
+          // Set validity only at final approval, when caller passes dates
+          ...(becomingApproved && validity?.validityFrom ? { validityFrom: validity.validityFrom } : {}),
+          ...(becomingApproved && validity?.validityExpiry ? { validityExpiry: validity.validityExpiry } : {}),
+          ...(becomingApproved ? { issuedAt: new Date().toISOString() } : {}),
         };
       });
       void save(updated);
