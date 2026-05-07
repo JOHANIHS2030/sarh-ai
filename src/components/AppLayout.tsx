@@ -242,6 +242,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </nav>
 
         <div className="p-3 border-t border-sidebar-border space-y-2">
+          <NavLink
+            to="/help"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors w-full text-sm"
+            activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
+          >
+            <BookOpen className="w-5 h-5 flex-shrink-0" />
+            {sidebarOpen && <span className="truncate">{language === 'ar' ? 'دليل المستخدم' : 'User Guide'}</span>}
+          </NavLink>
           <a
             href={externalUrl}
             target="_blank"
@@ -269,7 +277,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
         </div>
       </aside>
 
-      <div className={`flex-1 ${sidebarOpen ? 'ms-64' : 'ms-16'} transition-all duration-300`}>
+      <div className={`flex-1 ${sidebarOpen ? 'ms-64' : 'ms-16'} transition-all duration-300 flex flex-col min-h-screen`}>
         <header className="h-14 bg-card border-b border-border flex items-center justify-between px-4 sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="text-muted-foreground">
@@ -277,6 +285,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </Button>
           </div>
           <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setAboutOpen(true)}
+              className="text-muted-foreground hover:text-foreground"
+              title={language === 'ar' ? 'حول النظام' : 'About'}
+            >
+              <Info className="w-5 h-5" />
+            </Button>
             <NotificationsBell />
             <div className="h-8 w-px bg-border" />
             <div className="text-end">
@@ -289,10 +306,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
           </div>
         </header>
 
-        <main className="p-6">
+        <main className="p-6 flex-1">
           {children}
         </main>
+        <AppFooter />
       </div>
+
+      <AboutModal open={aboutOpen} onOpenChange={setAboutOpen} />
     </div>
   );
 }
