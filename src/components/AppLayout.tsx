@@ -1,3 +1,4 @@
+// Copyright © 2026. All rights reserved. Developed by: [Hani Salem Al-Johani] - Employee ID: [10594] - FYPC Industrial Security Dept.
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,10 +7,12 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { NavLink } from '@/components/NavLink';
 import {
   LayoutDashboard, FilePlus, FileText, CheckSquare, LogOut, Globe, Shield,
-  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench, ShieldCheck, BarChart3
+  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench, ShieldCheck, BarChart3, Info, BookOpen, CalendarRange
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationsBell from '@/components/NotificationsBell';
+import AppFooter from '@/components/AppFooter';
+import AboutModal from '@/components/AboutModal';
 
 interface AppLayoutProps {
   children: React.ReactNode;
