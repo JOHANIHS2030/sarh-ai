@@ -1,3 +1,4 @@
+// Copyright © 2026. All rights reserved. Developed by: [Hani Salem Al-Johani] - Employee ID: [10594] - FYPC Industrial Security Dept.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
@@ -37,6 +38,9 @@ import PermitPendingApprovalsPage from "@/pages/permits/PermitPendingApprovalsPa
 import AllPermitsPage from "@/pages/permits/AllPermitsPage";
 import PermitDetailsPage from "@/pages/permits/PermitDetailsPage";
 import ReportsHubPage from "@/pages/reports/ReportsHubPage";
+import ExpiryDashboardPage from "@/pages/reports/ExpiryDashboardPage";
+import PeriodicReportsPage from "@/pages/reports/PeriodicReportsPage";
+import UserGuidePage from "@/pages/UserGuidePage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -71,7 +75,12 @@ function AuthenticatedApp() {
         <Route path="/permits/request/:id" element={<PermitDetailsPage />} />
 
         {/* Admin Reports */}
+        <Route path="/reports/expiring" element={<ExpiryDashboardPage />} />
+        <Route path="/reports/periodic" element={<PeriodicReportsPage />} />
         <Route path="/reports/:domain/:bucket" element={<ReportsHubPage />} />
+
+        {/* Help / User Guide */}
+        <Route path="/help" element={<UserGuidePage />} />
 
         <Route path="/settings/users" element={<UsersSettingsPage />} />
         <Route path="/settings/external-users" element={<ExternalUsersSettingsPage />} />

@@ -1,3 +1,4 @@
+// Copyright © 2026. All rights reserved. Developed by: [Hani Salem Al-Johani] - Employee ID: [10594] - FYPC Industrial Security Dept.
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
