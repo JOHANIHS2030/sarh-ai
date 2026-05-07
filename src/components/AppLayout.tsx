@@ -70,6 +70,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
   ];
 
   const reportsItems: NavItem[] = [
+    { to: '/reports/expiring', icon: BarChart3, label: language === 'ar' ? 'لوحة الصلاحية والتنبيهات' : 'Expiry Dashboard', show: isAdmin },
+    { to: '/reports/periodic', icon: CalendarRange, label: language === 'ar' ? 'تقارير دورية (شهري/سنوي)' : 'Periodic Reports', show: isAdmin },
     { to: '/reports/idcards/all',      icon: FileText, label: language === 'ar' ? 'بطاقات الهوية — الكل' : 'ID Cards — All', show: isAdmin },
     { to: '/reports/idcards/issued',   icon: FileText, label: language === 'ar' ? 'بطاقات الهوية الصادرة' : 'ID Cards — Issued', show: isAdmin },
     { to: '/reports/idcards/pending',  icon: FileText, label: language === 'ar' ? 'بطاقات الهوية المعلقة' : 'ID Cards — On Hold', show: isAdmin },
