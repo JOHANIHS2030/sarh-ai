@@ -23,6 +23,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { t, toggleLanguage, language } = useLanguage();
   const { settings: companySettings } = useCompany();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const location = useLocation();
 
   const isAdmin = currentUser?.role === 'admin';
