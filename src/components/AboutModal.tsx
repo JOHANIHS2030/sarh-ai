@@ -30,14 +30,14 @@ export default function AboutModal({ open, onOpenChange }: AboutModalProps) {
         <div className="space-y-4 text-sm leading-relaxed">
           <p className="text-foreground">
             {isAr
-              ? 'هذا النظام هو مبادرة مخصّصة من قسم الأمن الصناعي بشركة الفارابي ينبع للبتروكيماويات لتنظيم وإدارة طلبات إصدار بطاقات الهوية وملصقات المركبات والتصاريح الأمنية بشكل احترافي ومتكامل.'
-              : 'This system is a dedicated initiative by the Industrial Security Department at Farabi Yanbu Petrochemicals to professionally organize and manage ID card requests, vehicle stickers, and security permits in a unified workflow.'}
+              ? 'صرح الذكي (Sarh AI) نظام ذكي عام لإدارة طلبات بطاقات الهوية وملصقات المركبات والتصاريح الأمنية في المنشآت والشركات بمختلف القطاعات، بواجهة موحدة وتدفقات اعتماد متكاملة.'
+              : 'Sarh AI is a generic, AI-assisted platform for managing ID cards, vehicle stickers, and security permits across any organization, with a unified interface and end-to-end approval workflows.'}
           </p>
 
           <div className="rounded-lg border border-border bg-muted/30 p-3 space-y-1.5">
-            <Row label={isAr ? 'المطوّر' : 'Developer'} value="Hani Salem Al-Johani" />
-            <Row label={isAr ? 'الرقم الوظيفي' : 'Employee ID'} value="10594" />
-            <Row label={isAr ? 'الإدارة' : 'Department'} value={isAr ? 'قسم الأمن الصناعي — FYPC' : 'Industrial Security Dept. — FYPC'} />
+            <Row label={isAr ? 'اسم النظام' : 'System'} value="Sarh AI — صرح الذكي" />
+            <Row label={isAr ? 'الفئة' : 'Category'} value={isAr ? 'إدارة التصاريح الأمنية' : 'Security Permits Management'} />
+            <Row label={isAr ? 'المشاركة' : 'Submission'} value={isAr ? 'هاكاثون كنز للذكاء الاصطناعي' : 'Kanz AI Hackathon'} />
             <Row label={isAr ? 'إصدار النظام' : 'Version'} value={APP_VERSION} />
             <Row label={isAr ? 'حقوق النشر' : 'Copyright'} value="© 2026" />
           </div>

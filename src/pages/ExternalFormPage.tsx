@@ -110,7 +110,7 @@ export default function ExternalFormPage() {
                 {t('دخول مندوبي الشركات', 'Contractor Representative Login')}
               </h1>
               <p className="text-primary-foreground/80 text-sm mt-1">
-                {t('النموذج الخارجي - شركة الفارابي ينبع', 'External Form - Farabi Yanbu')}
+                {t('النموذج الخارجي — صرح الذكي', 'External Form — Sarh AI')}
               </p>
             </div>
             <form onSubmit={handleLogin} className="p-6 space-y-4">

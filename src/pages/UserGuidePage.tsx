@@ -221,8 +221,8 @@ export default function UserGuidePage() {
             </h2>
             <p className="text-sm text-muted-foreground mt-1">
               {isAr
-                ? 'قسم الأمن الصناعي — شركة الفارابي ينبع للبتروكيماويات'
-                : 'Industrial Security Department — Farabi Yanbu Petrochemicals'}
+                ? 'صرح الذكي — نظام إدارة التصاريح الأمنية'
+                : 'Sarh AI — Smart Security Permits System'}
             </p>
           </div>
 

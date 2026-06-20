@@ -58,7 +58,7 @@ export interface LaptopPermitDetails {
   laptopBrand: string;           // نوع الجهاز المحمول
   laptopModel: string;           // الموديل
   serialNumber: string;          // الرقم التسلسلي
-  farabiStickerNo: string;       // رقم ملصق الفارابي
+  farabiStickerNo: string;       // رقم ملصق الأصل/الجهاز (kept name for backward compatibility)
   // IT review notes (optional - filled at IT stage)
   itReviewNotes?: string;
   // Optional
@@ -78,7 +78,7 @@ export interface PhotographyPermitDetails {
   photographyType: PhotographyTypeFlags; // نوعية التصوير (فيديو / فوتوغرافي/رقمي)
   locations: string;             // المنطقة (الموقع/المباني) المطلوب تصويرها
   declarationAccepted: boolean;  // إقرار وتعهد
-  photographerName: string;      // اسم المصور المخصص (الفارابي)
+  photographerName: string;      // اسم المصور المعتمد
   photographerJobTitle: string;  // الوظيفة
   // Extras (kept for backward compatibility)
   photographerId?: string;

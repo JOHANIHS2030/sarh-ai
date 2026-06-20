@@ -39,7 +39,7 @@ export function statusLabel(s: StickerStatus, language: 'ar' | 'en'): string {
 
 export function stickerTypeLabel(t: StickerType, language: 'ar' | 'en'): string {
   const map: Record<StickerType, { ar: string; en: string }> = {
-    employee: { ar: 'موظف الفارابي', en: 'Farabi Employee' },
+    employee: { ar: 'موظف الشركة', en: 'Company Employee' },
     company_vehicle: { ar: 'سيارة الشركة', en: 'Company Vehicle' },
     contractor_vehicle: { ar: 'مركبة مقاول', en: 'Contractor Vehicle' },
   };

@@ -200,7 +200,7 @@ export async function generatePermitPDF({
       ${row(tr('الوظيفة', 'Job Title'), permit.applicant.jobTitle)}
       ${row(tr('نوع وموديل الجهاز المحمول', 'Laptop Type & Model'), `${permit.laptop.laptopBrand} ${permit.laptop.laptopModel || ''}`.trim())}
       ${row(tr('الرقم التسلسلي', 'Serial Number'), permit.laptop.serialNumber)}
-      ${row(tr('رقم ملصق الفارابي', 'Farabi Sticker Number'), permit.laptop.farabiStickerNo)}
+      ${row(tr('رقم ملصق الأصل/الجهاز', 'Asset Sticker Number'), permit.laptop.farabiStickerNo)}
       ${permit.laptop.itReviewNotes ? row(tr('ملاحظات تقنية المعلومات', 'IT Notes'), permit.laptop.itReviewNotes) : ''}
     </table>`;
   } else if (permit.photography) {
@@ -213,7 +213,7 @@ export async function generatePermitPDF({
       ${row(tr('نوع ورقم آلة التصوير', 'Camera Type & Number'), p.cameraTypeAndNumber)}
       ${row(tr('نوعية التصوير', 'Photography Type'), ptype)}
       ${row(tr('المنطقة المطلوب تصويرها', 'Areas to be Photographed'), p.locations)}
-      ${row(tr('اسم المصور المخصص (الفارابي)', 'Designated Photographer (FYPC)'), p.photographerName)}
+      ${row(tr('اسم المصور المعتمد', 'Authorized Photographer'), p.photographerName)}
       ${row(tr('الوظيفة', 'Job Title'), p.photographerJobTitle)}
     </table>`;
     declarationHtml = `<div class="declaration">
@@ -225,7 +225,7 @@ export async function generatePermitPDF({
     const condAr = [
       'يجب أن تتم عملية التصوير طبقاً للضوابط المدرجة أدناه. وعدم الوفاء لأي من الضوابط سوف لا يستحق لهذه العملية.',
       'يجب تحديد الغرض والنوع من التصوير وكذلك الجهة المنفذة له.',
-      'يجب تنفيذ عملية التصوير من قبل موظف سعودي لدى شركة الفارابي مصرح له بالتصوير من قبل إدارة البيئة والصحة والسلامة والأمن. وإذا تعذر ذلك فبالإمكان الاستعانة بخبرات مصورين غير سعوديين من جهات أخرى حيث أن عملية التصوير تنفذ تحت إشراف مباشر من قبل مشرف وردية الأمن بإدارة البيئة والصحة والسلامة والأمن.',
+      'يجب تنفيذ عملية التصوير من قبل موظف معتمد من إدارة البيئة والصحة والسلامة والأمن. وتُنفذ عملية التصوير تحت الإشراف المباشر لمشرف وردية الأمن.',
       'يجب تحديد المنطقة المطلوبة للتصوير (مواقع/مباني الخ) وكذلك المنشآت المجاورة وينبغي ألا يظهر أي مواقع أخرى في التصوير.',
       'يقدم محضر ضبط تصوير إلى إدارة البيئة والصحة والسلامة والأمن بعد إكمال التصوير مع ذكر عدد الصور الملتقطة والمدة من البداية إلى النهاية.',
       'يتم التأكد من تلافي تصوير المنشأة المجاورة بالتحكم في زاوية عدسة التصوير للكاميرا ويتم توثيق كل اللقطات التي تم أخذها بمحضر ضبط التصوير والموقع من إدارة البيئة والصحة والسلامة والأمن والجهة الطالبة.',
@@ -235,7 +235,7 @@ export async function generatePermitPDF({
     ];
     const condEn = [
       'The photography session shall only be carried out in accordance to below conditions. Any condition that will not be met shall not merit the session.',
-      'Photography shall be conducted by an authorized FYPC employee.',
+      'Photography shall be conducted by an authorized employee under direct security supervision.',
       'The purpose of the intended photography shall be indicated in the permit. Specifying the type of photography and the party conducting it. The subject (i.e., site, building) to be photographed and the adjacent establishments should be specified. No other subject must be intently visible in the photography.',
       'The undertakings on the permit shall be understood by party or department concerned who carry out the photography. The party or concerned department shall be accountable if they have been found to have violated the instructions stipulated in the conditions of photography.',
       'Photography shall be conducted under the supervision and follow-up of a Security Supervisor in the EHSS Department of which the data, documentation of the pictures and films and their negatives as well as all other related material shall be controlled and stored by Security Section. Photos or videos shall not be used for any other purpose that is permitted for.',

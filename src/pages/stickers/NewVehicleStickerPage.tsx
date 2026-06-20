@@ -185,7 +185,7 @@ export default function NewVehicleStickerPage() {
   };
 
   const stickerTypes: { value: StickerType; ar: string; en: string; icon: typeof User }[] = [
-    { value: 'employee', ar: 'موظف الفارابي', en: 'Farabi Employee', icon: User },
+    { value: 'employee', ar: 'موظف الشركة', en: 'Company Employee', icon: User },
     { value: 'company_vehicle', ar: 'سيارة الشركة', en: 'Company Vehicle', icon: Car },
     { value: 'contractor_vehicle', ar: 'مركبة مقاول', en: 'Contractor Vehicle', icon: Building },
   ];
@@ -201,7 +201,7 @@ export default function NewVehicleStickerPage() {
             {t('طلب ملصق مركبة جديد', 'New Vehicle Sticker Request')}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {t('شركة الفارابي ينبع للبتروكيماويات', 'Farabi Yanbu Petrochemicals')}
+            {t('صرح الذكي — إدارة التصاريح', 'Sarh AI — Permits Management')}
           </p>
         </div>
       </div>
