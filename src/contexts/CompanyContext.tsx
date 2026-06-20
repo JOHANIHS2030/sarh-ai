@@ -14,13 +14,13 @@ export interface CompanySettings {
 }
 
 const defaultSettings: CompanySettings = {
-  nameAr: 'شركة الفارابي ينبع للبتروكيماويات',
-  nameEn: 'Farabi Yanbu Petrochemicals',
-  addressAr: 'ينبع الصناعية، المملكة العربية السعودية',
-  addressEn: 'Yanbu Industrial City, Saudi Arabia',
-  phone: '+966 14 000 0000',
-  email: 'info@farabi.com',
-  website: 'www.farabi.com',
+  nameAr: 'صرح الذكي',
+  nameEn: 'Sarh AI',
+  addressAr: 'المملكة العربية السعودية',
+  addressEn: 'Saudi Arabia',
+  phone: '+966 11 000 0000',
+  email: 'info@sarh-ai.demo',
+  website: 'www.sarh-ai.demo',
 };
 
 interface CompanyContextType {

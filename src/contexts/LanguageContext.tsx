@@ -6,8 +6,8 @@ interface Translations {
 }
 
 const translations: Translations = {
-  appTitle: { ar: 'نظام قسم بطاقات الهوية', en: 'FYPC ID Section System' },
-  appSubtitle: { ar: 'شركة الفارابي ينبع للبتروكيماويات', en: 'Farabi Yanbu Petrochemicals' },
+  appTitle: { ar: 'صرح الذكي — نظام التصاريح الأمنية', en: 'Sarh AI — Smart Security Permits System' },
+  appSubtitle: { ar: 'نظام ذكي لإدارة بطاقات الهوية وملصقات المركبات والتصاريح', en: 'AI-powered ID, Vehicle & Permit Management' },
   login: { ar: 'تسجيل الدخول', en: 'Login' },
   username: { ar: 'اسم المستخدم', en: 'Username' },
   password: { ar: 'كلمة المرور', en: 'Password' },

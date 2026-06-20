@@ -260,7 +260,7 @@ export default function PermitDetailsPage() {
               <Field label={t('نوع الجهاز', 'Laptop Type')} value={permit.laptop.laptopBrand} />
               <Field label={t('الموديل', 'Model')} value={permit.laptop.laptopModel} />
               <Field label={t('الرقم التسلسلي', 'Serial')} value={permit.laptop.serialNumber} mono />
-              <Field label={t('رقم ملصق الفارابي', 'Farabi Sticker No.')} value={permit.laptop.farabiStickerNo} mono />
+              <Field label={t('رقم ملصق الأصل/الجهاز', 'Asset Sticker No.')} value={permit.laptop.farabiStickerNo} mono />
               {permit.laptop.itReviewNotes && (
                 <div className="col-span-2 md:col-span-3">
                   <p className="text-xs text-muted-foreground">{t('ملاحظات تقنية المعلومات', 'IT Notes')}</p>

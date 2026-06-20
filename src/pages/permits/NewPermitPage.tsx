@@ -202,7 +202,7 @@ export default function NewPermitPage() {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-foreground">{t('طلب تصريح جديد', 'New Permit Request')}</h1>
-          <p className="text-sm text-muted-foreground">{t('شركة الفارابي ينبع للبتروكيماويات', 'Farabi Yanbu Petrochemicals')}</p>
+          <p className="text-sm text-muted-foreground">{t('صرح الذكي — إدارة التصاريح الأمنية', 'Sarh AI — Security Permits Management')}</p>
         </div>
       </div>
 
@@ -306,7 +306,7 @@ export default function NewPermitPage() {
               <div><Label className="text-sm">{t('نوع الجهاز المحمول', 'Laptop Type')} *</Label><Input value={laptop.laptopBrand} onChange={e => setLaptop(p => ({ ...p, laptopBrand: e.target.value }))} /></div>
               <div><Label className="text-sm">{t('الموديل', 'Model')}</Label><Input value={laptop.laptopModel} onChange={e => setLaptop(p => ({ ...p, laptopModel: e.target.value }))} /></div>
               <div><Label className="text-sm">{t('الرقم التسلسلي', 'Serial Number')} *</Label><Input value={laptop.serialNumber} onChange={e => setLaptop(p => ({ ...p, serialNumber: e.target.value }))} /></div>
-              <div className="md:col-span-2"><Label className="text-sm">{t('رقم ملصق الفارابي', 'Farabi Sticker Number')} *</Label><Input value={laptop.farabiStickerNo} onChange={e => setLaptop(p => ({ ...p, farabiStickerNo: e.target.value }))} /></div>
+              <div className="md:col-span-2"><Label className="text-sm">{t('رقم ملصق الأصل/الجهاز', 'Asset Sticker Number')} *</Label><Input value={laptop.farabiStickerNo} onChange={e => setLaptop(p => ({ ...p, farabiStickerNo: e.target.value }))} /></div>
             </div>
             <p className="text-xs text-muted-foreground mt-3 bg-muted/40 p-2 rounded">
               {t('سيتم توجيه الطلب إلى: مدير الإدارة ← قسم تقنية المعلومات ← رئيس قسم الأمن الصناعي.', 'Workflow: Department Manager → IT Department → Industrial Safety Chief.')}
@@ -355,7 +355,7 @@ export default function NewPermitPage() {
             </div>
 
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div><Label className="text-sm">{t('اسم المصور المخصص (الفارابي)', 'Designated Photographer Name (FYPC)')} *</Label><Input value={photography.photographerName} onChange={e => setPhotography(p => ({ ...p, photographerName: e.target.value }))} /></div>
+              <div><Label className="text-sm">{t('اسم المصور المعتمد', 'Authorized Photographer Name')} *</Label><Input value={photography.photographerName} onChange={e => setPhotography(p => ({ ...p, photographerName: e.target.value }))} /></div>
               <div><Label className="text-sm">{t('الوظيفة', 'Job Title')} *</Label><Input value={photography.photographerJobTitle} onChange={e => setPhotography(p => ({ ...p, photographerJobTitle: e.target.value }))} /></div>
             </div>
           </section>

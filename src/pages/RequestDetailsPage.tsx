@@ -193,7 +193,7 @@ export default function RequestDetailsPage() {
     <div class="header">
       <div>
         <h1>${language === 'ar' ? 'نموذج طلب إصدار بطاقة هوية' : 'ID Card Request Form'}</h1>
-        <p style="font-size:10px;color:#666">${language === 'ar' ? 'شركة الفارابي ينبع للبتروكيماويات' : 'Farabi Yanbu Petrochemicals'}</p>
+        <p style="font-size:10px;color:#666">${language === 'ar' ? 'صرح الذكي — نظام التصاريح الأمنية' : 'Sarh AI — Smart Security Permits System'}</p>
       </div>
       <div class="ref">
         <p>${language === 'ar' ? 'رقم الطلب' : 'Request No.'}</p>

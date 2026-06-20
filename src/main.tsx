@@ -1,4 +1,5 @@
-// Copyright © 2026. All rights reserved. Developed by: [Hani Salem Al-Johani] - Employee ID: [10594] - FYPC Industrial Security Dept.
+// Sarh AI (صرح الذكي) — Smart Security Permits & ID Card System.
+// Generic system designed for any organization; ships with demo data for showcase.
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
@@ -6,5 +7,8 @@ import "./index.css";
 import "@fontsource/cairo/400.css";
 import "@fontsource/cairo/600.css";
 import "@fontsource/cairo/700.css";
+import { resetAndSeedIfNeeded } from "./lib/resetAndSeed";
+
+resetAndSeedIfNeeded();
 
 createRoot(document.getElementById("root")!).render(<App />);

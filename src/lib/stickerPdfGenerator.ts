@@ -118,7 +118,7 @@ export async function generateStickerPDF({
 
   const stickerTypeLabel =
     sticker.stickerType === 'employee'
-      ? tr('موظف الفارابي', 'Farabi Employee')
+      ? tr('موظف الشركة', 'Company Employee')
       : sticker.stickerType === 'company_vehicle'
         ? tr('سيارة الشركة', 'Company Vehicle')
         : tr('مركبة مقاول', 'Contractor Vehicle');
