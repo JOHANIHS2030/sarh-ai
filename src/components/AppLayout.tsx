@@ -7,7 +7,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { NavLink } from '@/components/NavLink';
 import {
   LayoutDashboard, FilePlus, FileText, CheckSquare, LogOut, Globe, Shield,
-  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench, ShieldCheck, BarChart3, Info, BookOpen, CalendarRange
+  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench, ShieldCheck, BarChart3, Info, BookOpen, CalendarRange, Monitor
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationsBell from '@/components/NotificationsBell';

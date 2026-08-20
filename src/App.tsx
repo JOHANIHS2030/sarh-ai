@@ -47,6 +47,7 @@ import ReportsHubPage from "@/pages/reports/ReportsHubPage";
 import ExpiryDashboardPage from "@/pages/reports/ExpiryDashboardPage";
 import PeriodicReportsPage from "@/pages/reports/PeriodicReportsPage";
 import UserGuidePage from "@/pages/UserGuidePage";
+import DesktopAppPage from "@/pages/DesktopAppPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -87,6 +88,7 @@ function AuthenticatedApp() {
 
         {/* Help / User Guide */}
         <Route path="/help" element={<UserGuidePage />} />
+        <Route path="/desktop" element={<DesktopAppPage />} />
 
         <Route path="/settings/users" element={<UsersSettingsPage />} />
         <Route path="/settings/external-users" element={<ExternalUsersSettingsPage />} />
