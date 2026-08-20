@@ -112,13 +112,13 @@ const App = () => (
               <RequestProvider>
                 <VehicleStickerProvider>
                   <PermitsProvider>
-                    <BrowserRouter>
+                    <AppRouter>
                       <Routes>
                         <Route path="/external-form" element={<ExternalFormPage />} />
                         <Route path="/external-vehicle-sticker" element={<ExternalVehicleStickerPage />} />
                         <Route path="/*" element={<AuthenticatedApp />} />
                       </Routes>
-                    </BrowserRouter>
+                    </AppRouter>
                   </PermitsProvider>
                 </VehicleStickerProvider>
               </RequestProvider>
