@@ -250,6 +250,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
             <BookOpen className="w-5 h-5 flex-shrink-0" />
             {sidebarOpen && <span className="truncate">{language === 'ar' ? 'دليل المستخدم' : 'User Guide'}</span>}
           </NavLink>
+          <NavLink
+            to="/desktop"
+            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors w-full text-sm"
+            activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
+          >
+            <Monitor className="w-5 h-5 flex-shrink-0" />
+            {sidebarOpen && <span className="truncate">{language === 'ar' ? 'نسخة سطح المكتب' : 'Desktop Version'}</span>}
+          </NavLink>
           <a
             href={externalUrl}
             target="_blank"
