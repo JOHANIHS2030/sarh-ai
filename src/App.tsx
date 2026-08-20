@@ -1,6 +1,12 @@
 // Sarh AI — صرح الذكي. Smart Security Permits System. © 2026.
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, HashRouter, Route, Routes } from "react-router-dom";
+
+// Desktop (Electron) builds are served from file:// and need a hash router
+const AppRouter =
+  typeof window !== "undefined" && window.location.protocol === "file:"
+    ? HashRouter
+    : BrowserRouter;
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
@@ -41,6 +47,7 @@ import ReportsHubPage from "@/pages/reports/ReportsHubPage";
 import ExpiryDashboardPage from "@/pages/reports/ExpiryDashboardPage";
 import PeriodicReportsPage from "@/pages/reports/PeriodicReportsPage";
 import UserGuidePage from "@/pages/UserGuidePage";
+import DesktopAppPage from "@/pages/DesktopAppPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -81,6 +88,7 @@ function AuthenticatedApp() {
 
         {/* Help / User Guide */}
         <Route path="/help" element={<UserGuidePage />} />
+        <Route path="/desktop" element={<DesktopAppPage />} />
 
         <Route path="/settings/users" element={<UsersSettingsPage />} />
         <Route path="/settings/external-users" element={<ExternalUsersSettingsPage />} />
@@ -106,13 +114,13 @@ const App = () => (
               <RequestProvider>
                 <VehicleStickerProvider>
                   <PermitsProvider>
-                    <BrowserRouter>
+                    <AppRouter>
                       <Routes>
                         <Route path="/external-form" element={<ExternalFormPage />} />
                         <Route path="/external-vehicle-sticker" element={<ExternalVehicleStickerPage />} />
                         <Route path="/*" element={<AuthenticatedApp />} />
                       </Routes>
-                    </BrowserRouter>
+                    </AppRouter>
                   </PermitsProvider>
                 </VehicleStickerProvider>
               </RequestProvider>
