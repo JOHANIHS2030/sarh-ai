@@ -16,6 +16,7 @@ import { CompanyProvider } from "@/contexts/CompanyContext";
 import { ExternalUsersProvider } from "@/contexts/ExternalUsersContext";
 import { VehicleStickerProvider } from "@/contexts/VehicleStickerContext";
 import { PermitsProvider } from "@/contexts/PermitsContext";
+import { ViolationsProvider } from "@/contexts/ViolationsContext";
 import CompanySettingsPage from "@/pages/CompanySettingsPage";
 import LoginPage from "@/pages/LoginPage";
 import AppLayout from "@/components/AppLayout";
@@ -46,6 +47,8 @@ import PermitDetailsPage from "@/pages/permits/PermitDetailsPage";
 import ReportsHubPage from "@/pages/reports/ReportsHubPage";
 import ExpiryDashboardPage from "@/pages/reports/ExpiryDashboardPage";
 import PeriodicReportsPage from "@/pages/reports/PeriodicReportsPage";
+import NewViolationPage from "@/pages/violations/NewViolationPage";
+import ViolationsListPage from "@/pages/violations/ViolationsListPage";
 import UserGuidePage from "@/pages/UserGuidePage";
 import DesktopAppPage from "@/pages/DesktopAppPage";
 import NotFound from "@/pages/NotFound";
@@ -81,6 +84,10 @@ function AuthenticatedApp() {
         <Route path="/permits/all" element={<AllPermitsPage />} />
         <Route path="/permits/request/:id" element={<PermitDetailsPage />} />
 
+        {/* Violations & Fines */}
+        <Route path="/violations/new" element={<NewViolationPage />} />
+        <Route path="/violations/all" element={<ViolationsListPage />} />
+
         {/* Admin Reports */}
         <Route path="/reports/expiring" element={<ExpiryDashboardPage />} />
         <Route path="/reports/periodic" element={<PeriodicReportsPage />} />
@@ -114,6 +121,7 @@ const App = () => (
               <RequestProvider>
                 <VehicleStickerProvider>
                   <PermitsProvider>
+                    <ViolationsProvider>
                     <AppRouter>
                       <Routes>
                         <Route path="/external-form" element={<ExternalFormPage />} />
@@ -121,6 +129,7 @@ const App = () => (
                         <Route path="/*" element={<AuthenticatedApp />} />
                       </Routes>
                     </AppRouter>
+                    </ViolationsProvider>
                   </PermitsProvider>
                 </VehicleStickerProvider>
               </RequestProvider>

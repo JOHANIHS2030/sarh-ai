@@ -7,7 +7,7 @@ import { useCompany } from '@/contexts/CompanyContext';
 import { NavLink } from '@/components/NavLink';
 import {
   LayoutDashboard, FilePlus, FileText, CheckSquare, LogOut, Globe, Shield,
-  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench, ShieldCheck, BarChart3, Info, BookOpen, CalendarRange, Monitor
+  ChevronLeft, ChevronRight, ChevronDown, Menu, Users, Building2, Activity, GitBranch, Settings, ExternalLink, Wand2, Car, IdCard, Wrench, ShieldCheck, BarChart3, Info, BookOpen, CalendarRange, Monitor, Gavel
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationsBell from '@/components/NotificationsBell';
@@ -57,6 +57,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { to: '/permits/my', icon: ShieldCheck, label: language === 'ar' ? 'تصاريحي' : 'My Permits', show: true },
     { to: '/permits/pending', icon: CheckSquare, label: language === 'ar' ? 'موافقات التصاريح' : 'Permit Approvals', show: canApprovePermits },
     { to: '/permits/all', icon: FileText, label: language === 'ar' ? 'جميع التصاريح' : 'All Permits', show: hasPermitAuthority || isAdmin },
+  ];
+
+  const violationItems: NavItem[] = [
+    { to: '/violations/new', icon: FilePlus, label: language === 'ar' ? 'إصدار مخالفة' : 'Issue Violation', show: isIdCardTeam || isAdmin },
+    { to: '/violations/all', icon: Gavel, label: language === 'ar' ? 'سجل المخالفات والغرامات' : 'Violations & Fines', show: isIdCardTeam || isAdmin },
   ];
 
   const adminItems: NavItem[] = [
@@ -118,6 +123,14 @@ export default function AppLayout({ children }: AppLayoutProps) {
       labelEn: 'Permit Issuance System',
       items: permitItems.filter(i => i.show),
       show: permitItems.some(i => i.show),
+    },
+    {
+      id: 'violations',
+      icon: Gavel,
+      labelAr: 'المخالفات والغرامات (المقاولون)',
+      labelEn: 'Violations & Fines (Contractors)',
+      items: violationItems.filter(i => i.show),
+      show: violationItems.some(i => i.show),
     },
     {
       id: 'reports',
